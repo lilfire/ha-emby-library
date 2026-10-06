@@ -1,0 +1,64 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Koble til Emby",
+        "description": "Lag en API-nøkkel i Emby under Innstillinger → Avansert → API-nøkler.",
+        "data": {
+          "url": "Serveradresse",
+          "api_key": "API-nøkkel",
+          "verify_ssl": "Verifiser SSL-sertifikat"
+        },
+        "data_description": {
+          "url": "For eksempel http://192.168.1.10:8096"
+        }
+      },
+      "select_user": {
+        "title": "Velg Emby-bruker",
+        "description": "Kortet viser biblioteket, fremdriften og anbefalingene til denne brukeren.",
+        "data": {
+          "user_id": "Emby-bruker"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ny API-nøkkel",
+        "description": "Emby avviste API-nøkkelen for {title}. Oppgi en ny.",
+        "data": {
+          "api_key": "API-nøkkel"
+        }
+      },
+      "reconfigure": {
+        "title": "Endre serveradresse",
+        "data": {
+          "url": "Serveradresse",
+          "verify_ssl": "Verifiser SSL-sertifikat"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Får ikke kontakt med Emby-serveren.",
+      "invalid_auth": "Emby avviste API-nøkkelen.",
+      "unsupported_version": "Emby-serveren er for gammel. Versjon 4.8 eller nyere kreves.",
+      "no_users": "Emby-serveren returnerte ingen brukere.",
+      "wrong_server": "Dette er en annen Emby-server enn den som ble satt opp."
+    },
+    "abort": {
+      "already_configured": "Denne Emby-brukeren er allerede satt opp.",
+      "reauth_successful": "API-nøkkelen ble oppdatert.",
+      "reconfigure_successful": "Serveradressen ble oppdatert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Innstillinger for Emby Library",
+        "data": {
+          "hidden_views": "Bibliotek som skal skjules"
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Får ikke kontakt med Emby-serveren."
+    }
+  }
+}

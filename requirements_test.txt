@@ -1,0 +1,6 @@
+pytest-homeassistant-custom-component
+aioresponses
+pytest-cov
+ruff
+mypy
+home-assistant-frontend

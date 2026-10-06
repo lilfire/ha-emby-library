@@ -1,0 +1,28 @@
+[
+  {
+    "Id": "sess-tv", "DeviceId": "dev-tv", "DeviceName": "Living Room TV", "Client": "Emby for Android TV",
+    "UserName": "thomas", "SupportsRemoteControl": true, "PlayableMediaTypes": ["Audio", "Video"],
+    "SupportedCommands": ["SetVolume", "Mute", "Unmute", "ToggleMute", "VolumeUp", "VolumeDown"],
+    "PlayState": {"CanSeek": false, "IsPaused": false, "IsMuted": false}
+  },
+  {
+    "Id": "sess-web", "DeviceId": "dev-web", "DeviceName": "Chrome", "Client": "Emby Web",
+    "UserName": "thomas", "SupportsRemoteControl": true, "PlayableMediaTypes": ["Audio", "Video"],
+    "SupportedCommands": ["SetVolume"],
+    "PlayState": {"CanSeek": true, "IsPaused": true, "IsMuted": true, "PositionTicks": 6000000000, "VolumeLevel": 80},
+    "NowPlayingItem": {
+      "Id": "212", "Name": "Half Loop", "Type": "Episode", "MediaType": "Video", "IndexNumber": 2,
+      "ParentIndexNumber": 1, "RunTimeTicks": 30000000000, "SeriesId": "200", "SeriesName": "Severance",
+      "SeriesPrimaryImageTag": "pm200", "ImageTags": {"Primary": "pm212"}
+    }
+  },
+  {
+    "Id": "sess-audio", "DeviceId": "dev-audio", "DeviceName": "Speaker", "Client": "Emby Audio",
+    "SupportsRemoteControl": true, "PlayableMediaTypes": ["Audio"], "SupportedCommands": [],
+    "PlayState": {}
+  },
+  {
+    "Id": "sess-dlna", "DeviceId": "dev-dlna", "DeviceName": "Background", "Client": "Sync",
+    "SupportsRemoteControl": false, "PlayableMediaTypes": [], "PlayState": {}
+  }
+]

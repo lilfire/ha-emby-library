@@ -1,0 +1,13 @@
+{
+  "domain": "emby_library",
+  "name": "Emby Library",
+  "codeowners": ["@lilfire"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http", "websocket_api"],
+  "documentation": "https://github.com/lilfire/ha-emby-library",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/lilfire/ha-emby-library/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

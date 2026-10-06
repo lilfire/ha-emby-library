@@ -1,0 +1,58 @@
+{
+  "movie": {
+    "Id": "101", "Name": "Arrival", "Type": "Movie", "MediaType": "Video", "IsFolder": false,
+    "ProductionYear": 2016, "RunTimeTicks": 69600000000, "Overview": "A linguist works with the military.",
+    "Genres": ["Drama", "Science Fiction"], "OfficialRating": "PG-13", "CommunityRating": 7.9,
+    "PremiereDate": "2016-11-11T00:00:00.0000000Z",
+    "ImageTags": {"Primary": "pm101", "Thumb": "th101"}, "BackdropImageTags": ["bd101"],
+    "UserData": {"PlaybackPositionTicks": 17400000000, "PlayedPercentage": 25.0, "Played": false, "PlayCount": 0}
+  },
+  "series": {
+    "Id": "200", "Name": "Severance", "Type": "Series", "IsFolder": true, "ProductionYear": 2022,
+    "ChildCount": 2, "Overview": "Work and life are separated.", "Genres": ["Drama"],
+    "ImageTags": {"Primary": "pm200"}, "BackdropImageTags": ["bd200"],
+    "UserData": {"UnplayedItemCount": 7, "Played": false, "PlaybackPositionTicks": 0}
+  },
+  "season": {
+    "Id": "210", "Name": "Season 1", "Type": "Season", "IsFolder": true, "IndexNumber": 1,
+    "SeriesId": "200", "SeriesName": "Severance", "SeriesPrimaryImageTag": "pm200",
+    "ImageTags": {}, "BackdropImageTags": [],
+    "ParentBackdropItemId": "200", "ParentBackdropImageTags": ["bd200"],
+    "UserData": {"UnplayedItemCount": 3, "Played": false, "PlaybackPositionTicks": 0}
+  },
+  "episode": {
+    "Id": "211", "Name": "Good News About Hell", "Type": "Episode", "MediaType": "Video", "IsFolder": false,
+    "IndexNumber": 1, "ParentIndexNumber": 1, "ProductionYear": 2022, "RunTimeTicks": 34200000000,
+    "SeriesId": "200", "SeriesName": "Severance", "SeasonId": "210", "SeriesPrimaryImageTag": "pm200",
+    "ImageTags": {"Primary": "pm211"}, "BackdropImageTags": [],
+    "ParentBackdropItemId": "200", "ParentBackdropImageTags": ["bd200"],
+    "ParentThumbItemId": "200", "ParentThumbImageTag": "th200",
+    "UserData": {"PlaybackPositionTicks": 0, "Played": true, "PlayCount": 1}
+  },
+  "episode2": {
+    "Id": "212", "Name": "Half Loop", "Type": "Episode", "MediaType": "Video", "IsFolder": false,
+    "IndexNumber": 2, "ParentIndexNumber": 1, "RunTimeTicks": 30000000000,
+    "SeriesId": "200", "SeriesName": "Severance", "SeasonId": "210", "SeriesPrimaryImageTag": "pm200",
+    "ImageTags": {},
+    "ParentBackdropItemId": "200", "ParentBackdropImageTags": ["bd200"],
+    "ParentThumbItemId": "200", "ParentThumbImageTag": "th200",
+    "UserData": {"PlaybackPositionTicks": 6000000000, "Played": false, "PlayCount": 0}
+  },
+  "special": {
+    "Id": "299", "Name": "Behind the Scenes", "Type": "Episode", "MediaType": "Video", "IsFolder": false,
+    "SeriesId": "200", "SeriesName": "Severance",
+    "ImageTags": {},
+    "UserData": {"PlaybackPositionTicks": 0, "Played": false}
+  },
+  "no_images": {
+    "Id": "102", "Name": "Home Video", "Type": "Movie", "MediaType": "Video", "IsFolder": false,
+    "UserData": {"PlaybackPositionTicks": 0, "Played": false}
+  },
+  "boxset": {
+    "Id": "300", "Name": "Alien Collection", "Type": "BoxSet", "IsFolder": true,
+    "ImageTags": {"Primary": "pm300"}, "UserData": {"UnplayedItemCount": 2, "Played": false}
+  },
+  "folder": {
+    "Id": "400", "Name": "Holiday 2024", "Type": "CollectionFolder", "IsFolder": true, "ImageTags": {}
+  }
+}

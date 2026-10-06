@@ -1,0 +1,64 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Emby",
+        "description": "Create an API key in Emby under Settings → Advanced → API Keys.",
+        "data": {
+          "url": "Server address",
+          "api_key": "API key",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "data_description": {
+          "url": "For example http://192.168.1.10:8096"
+        }
+      },
+      "select_user": {
+        "title": "Select Emby user",
+        "description": "The card shows the library, progress and suggestions of this user.",
+        "data": {
+          "user_id": "Emby user"
+        }
+      },
+      "reauth_confirm": {
+        "title": "New API key",
+        "description": "Emby rejected the API key for {title}. Enter a new one.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Change server address",
+        "data": {
+          "url": "Server address",
+          "verify_ssl": "Verify SSL certificate"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the Emby server.",
+      "invalid_auth": "Emby rejected the API key.",
+      "unsupported_version": "The Emby server is too old. Version 4.8 or newer is required.",
+      "no_users": "The Emby server returned no users.",
+      "wrong_server": "This is a different Emby server than the one that was set up."
+    },
+    "abort": {
+      "already_configured": "This Emby user is already set up.",
+      "reauth_successful": "The API key was updated.",
+      "reconfigure_successful": "The server address was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Emby Library options",
+        "data": {
+          "hidden_views": "Libraries to hide"
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Cannot connect to the Emby server."
+    }
+  }
+}

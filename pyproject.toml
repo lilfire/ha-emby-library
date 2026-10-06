@@ -1,0 +1,29 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=custom_components.emby_library --cov-report=term-missing --cov-fail-under=90"
+
+[tool.coverage.run]
+source = ["custom_components/emby_library"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "S", "PL", "RUF"]
+ignore = ["PLR0911", "PLR0912", "PLR0913", "PLR0917", "PLR2004", "UP041"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106", "PLR0915"]
+"scripts/*" = ["S310", "T201", "PLR0915"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components"]
+combine-as-imports = true
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["custom_components/emby_library"]
