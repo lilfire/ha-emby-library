@@ -8,7 +8,7 @@ reaches the browser, and it works when Home Assistant is on https and Emby is on
 
 This project is unofficial and not affiliated with Emby.
 
-> **Status: 0.1.0 in development.** The code is complete for v1 and covered by automated
+> **Status: 0.2.0 in development.** The code is complete for v1 and covered by automated
 > tests, but it has not yet been verified against a real Emby server (see
 > [Compatibility](#compatibility)). Screenshots are added with the first release.
 

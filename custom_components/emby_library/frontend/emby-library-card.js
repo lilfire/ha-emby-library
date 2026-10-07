@@ -3517,7 +3517,7 @@ var Wi = Object.defineProperty, Yi = Object.getOwnPropertyDescriptor, x = (e, t,
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
   return s && r && Wi(t, i, r), r;
 };
-const Gi = "0.1.0", Zi = 6e4, Ji = 1e4, Xi = 6e3, Qi = {
+const Gi = "0.2.0", Zi = 6e4, Ji = 1e4, Xi = 6e3, Qi = {
   home: "mdi:home-outline",
   library: "mdi:filmstrip-box-multiple",
   search: "mdi:magnify"

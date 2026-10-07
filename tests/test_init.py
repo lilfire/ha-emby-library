@@ -34,7 +34,7 @@ async def test_setup_registers_card_and_unloads(
 
     card = _card_urls(hass)
     assert len(card) == 1
-    assert card[0].startswith("/emby_library_static/emby-library-card.js?v=0.1.0-")
+    assert card[0].startswith("/emby_library_static/emby-library-card.js?v=0.2.0-")
     resource = hass.data[LOVELACE_DATA].resources.async_items()[0]
     assert resource["type"] == "module"
     extra = hass.data.get(DATA_EXTRA_MODULE_URL)
