@@ -5,6 +5,7 @@ import {
   chooseDevice,
   episodeCode,
   episodeLabel,
+  externalVolumes,
   formatClock,
   formatRuntime,
   fraction,
@@ -228,5 +229,59 @@ describe("tileWindow", () => {
     expect(tileWindow(0, 660, 600, 6)).toBe(60);
     expect(tileWindow(0, 660, 600, 7)).toBe(63);
     expect(tileWindow(0, 601, 600, 0)).toBe(1);
+  });
+});
+
+describe("externalVolumes", () => {
+  const targets: TargetConfig[] = [
+    { name: "TV", device_id: "tv", volume_entity: "media_player.tv" },
+    { name: "Bedroom", device_id: "bedroom" },
+  ];
+  const entity = (state: string, attributes: Record<string, unknown>) => ({ state, attributes });
+
+  it("reads level and mute from the entity, keyed by device_id", () => {
+    const volumes = externalVolumes(targets, {
+      "media_player.tv": entity("on", {
+        volume_level: 0.654,
+        is_volume_muted: true,
+        supported_features: 4 | 8 | 1,
+      }),
+    });
+    expect(volumes).toEqual({
+      tv: { entityId: "media_player.tv", level: 65, muted: true, canSet: true, canMute: true },
+    });
+  });
+
+  it("only affects clients that have a volume_entity", () => {
+    const volumes = externalVolumes(targets, {
+      "media_player.tv": entity("on", { volume_level: 0.5, supported_features: 4 }),
+      "media_player.bedroom": entity("on", { volume_level: 0.5, supported_features: 12 }),
+    });
+    expect(Object.keys(volumes)).toEqual(["tv"]);
+    expect(volumes.tv).toMatchObject({ canSet: true, canMute: false, muted: false });
+  });
+
+  it("leaves out entities that are missing, unavailable or without volume features", () => {
+    expect(externalVolumes(targets, undefined)).toEqual({});
+    expect(externalVolumes(targets, {})).toEqual({});
+    expect(
+      externalVolumes(targets, {
+        "media_player.tv": entity("unavailable", { supported_features: 12 }),
+      }),
+    ).toEqual({});
+    expect(
+      externalVolumes(targets, { "media_player.tv": entity("on", { supported_features: 1 }) }),
+    ).toEqual({});
+  });
+
+  it("handles a missing or out-of-range level", () => {
+    const of = (level: unknown) =>
+      externalVolumes(targets, {
+        "media_player.tv": entity("off", { volume_level: level, supported_features: 12 }),
+      }).tv?.level;
+    expect(of(undefined)).toBeNull();
+    expect(of("loud")).toBeNull();
+    expect(of(1.4)).toBe(100);
+    expect(of(-1)).toBe(0);
   });
 });

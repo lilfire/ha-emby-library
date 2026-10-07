@@ -51,6 +51,18 @@ describe("validateConfig", () => {
     expect(config.targets[0]?.wake_action).toEqual({ action: "switch.turn_on" });
   });
 
+  it("accepts a volume_entity on a target without a wake_action", () => {
+    const config = validateConfig({
+      type: TYPE,
+      targets: [{ name: "TV", device_id: "x", volume_entity: "media_player.stuetv_2" }],
+    });
+    expect(config.targets[0]).toEqual({
+      name: "TV",
+      device_id: "x",
+      volume_entity: "media_player.stuetv_2",
+    });
+  });
+
   it.each([
     [{ colour: "red" }, 'Unknown field "colour"'],
     [{ start_view: "music" }, '"start_view" must be one of: home, library, search'],
@@ -79,6 +91,10 @@ describe("validateConfig", () => {
     [
       { targets: [{ name: "TV", device_id: "x", wake_action: { action: "a.b", target: "x" } }] },
       '"targets[0].wake_action.target" must be a mapping',
+    ],
+    [
+      { targets: [{ name: "TV", device_id: "x", volume_entity: "light.tv" }] },
+      '"targets[0].volume_entity" must be a media_player entity',
     ],
     [{ start_view: "search", show_search: false }, 'requires "show_search: true"'],
   ])("rejects %j with a readable error", (extra, message) => {

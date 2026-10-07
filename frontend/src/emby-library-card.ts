@@ -7,7 +7,13 @@ import "./components/now-playing";
 import "./components/target-picker";
 import { POSTER_WIDTHS, validateConfig } from "./config";
 import "./editor";
-import type { ControlDetail, OpenItemDetail, PlayDetail, TargetChoice } from "./events";
+import type {
+  ControlDetail,
+  OpenItemDetail,
+  PlayDetail,
+  TargetChoice,
+  VolumeDetail,
+} from "./events";
 import { languageOf, translate, type TranslationKey } from "./localize";
 import { errorText } from "./state-templates";
 import { sharedStyles } from "./styles";
@@ -15,13 +21,14 @@ import type {
   CardConfig,
   Entry,
   ErrorCode,
+  ExternalVolume,
   HomeAssistant,
   Session,
   SessionsEvent,
   StartView,
   TargetConfig,
 } from "./types";
-import { chooseDevice, sessionForDevice, targetStorageKey } from "./util";
+import { chooseDevice, externalVolumes, sessionForDevice, targetStorageKey } from "./util";
 import "./views/detail";
 import "./views/home";
 import "./views/library";
@@ -98,6 +105,10 @@ export class EmbyLibraryCard extends LitElement {
 
   @state() private _selectedDevice: string | null = null;
 
+  @state() private _volumes: Record<string, ExternalVolume> = {};
+
+  private _volumesKey = "{}";
+
   private _hass?: HomeAssistant;
 
   private _unsubscribe?: () => void;
@@ -131,6 +142,19 @@ export class EmbyLibraryCard extends LitElement {
     }
     if (!next.show_search && this._tab === "search") this._showTab("home");
     if (previous !== undefined && previous.entry !== next.entry) void this._init();
+    this._updateVolumes();
+  }
+
+  /** Re-render only when the volume of a configured volume_entity changes. */
+  private _updateVolumes(): void {
+    const targets = this._config?.targets ?? [];
+    if (targets.length === 0 && this._volumesKey === "{}") return;
+    const volumes = externalVolumes(targets, this._hass?.states);
+    const key = JSON.stringify(volumes);
+    if (key !== this._volumesKey) {
+      this._volumesKey = key;
+      this._volumes = volumes;
+    }
   }
 
   set hass(hass: HomeAssistant) {
@@ -138,6 +162,7 @@ export class EmbyLibraryCard extends LitElement {
     this._hass = hass;
     const lang = languageOf(hass);
     if (lang !== this._lang) this._lang = lang;
+    this._updateVolumes();
     if (previous?.connection !== hass.connection) {
       previous?.connection.removeEventListener("ready", this._onReady);
       if (this.isConnected) {
@@ -167,6 +192,7 @@ export class EmbyLibraryCard extends LitElement {
     this.addEventListener("emby-open-item", this._onOpenItem as EventListener);
     this.addEventListener("emby-play", this._onPlay as EventListener);
     this.addEventListener("emby-control", this._onControl as EventListener);
+    this.addEventListener("emby-volume", this._onVolume as EventListener);
     this.addEventListener("emby-error", this._onViewError as EventListener);
     if (this._hass) {
       this._hass.connection.addEventListener("ready", this._onReady);
@@ -179,6 +205,7 @@ export class EmbyLibraryCard extends LitElement {
     this.removeEventListener("emby-open-item", this._onOpenItem as EventListener);
     this.removeEventListener("emby-play", this._onPlay as EventListener);
     this.removeEventListener("emby-control", this._onControl as EventListener);
+    this.removeEventListener("emby-volume", this._onVolume as EventListener);
     this.removeEventListener("emby-error", this._onViewError as EventListener);
     this._hass?.connection.removeEventListener("ready", this._onReady);
     this._generation += 1;
@@ -420,6 +447,31 @@ export class EmbyLibraryCard extends LitElement {
     });
   };
 
+  /** Volume through a Home Assistant media_player, as the logged-in user. */
+  private readonly _onVolume = (event: CustomEvent<VolumeDetail>): void => {
+    event.stopPropagation();
+    const hass = this._hass;
+    const { entityId, level, muted } = event.detail;
+    // Only entities named in this card's own configuration can be controlled.
+    const allowed = this._config?.targets.some((target) => target.volume_entity === entityId);
+    if (!hass || !allowed) return;
+    const call =
+      level !== undefined
+        ? hass.callService(
+            "media_player",
+            "volume_set",
+            { volume_level: Math.min(100, Math.max(0, level)) / 100 },
+            { entity_id: entityId },
+          )
+        : hass.callService(
+            "media_player",
+            "volume_mute",
+            { is_volume_muted: muted === true },
+            { entity_id: entityId },
+          );
+    call.catch(() => this._show(this._t("error.generic")));
+  };
+
   // --- Navigation -----------------------------------------------------------
 
   private get _stack(): Level[] {
@@ -586,6 +638,7 @@ export class EmbyLibraryCard extends LitElement {
               class="now-playing"
               .language=${this._lang}
               .sessions=${this._sessions}
+              .volumes=${this._volumes}
               .receivedAt=${this._receivedAt}
             ></emby-library-now-playing>`
           : nothing}

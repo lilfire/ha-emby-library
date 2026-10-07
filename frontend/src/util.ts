@@ -1,6 +1,6 @@
 // Pure helpers: image choice, formatting, position interpolation and target choice.
 
-import type { Item, Session, TargetConfig } from "./types";
+import type { ExternalVolume, HassEntity, Item, Session, TargetConfig } from "./types";
 
 export type ImageShape = "poster" | "still";
 
@@ -134,4 +134,42 @@ export function tileWindow(
   if (loaded - start <= maxTiles) return start;
   const excess = loaded - start - maxTiles;
   return start + Math.ceil(excess / cols) * cols;
+}
+
+const FEATURE_VOLUME_SET = 4;
+const FEATURE_VOLUME_MUTE = 8;
+
+/**
+ * Volume for each client that has a `volume_entity`, keyed by device_id.
+ * Entities that are missing or unavailable are left out, so the card falls
+ * back to what Emby offers for that client.
+ */
+export function externalVolumes(
+  targets: readonly TargetConfig[],
+  states: Record<string, HassEntity> | undefined,
+): Record<string, ExternalVolume> {
+  const result: Record<string, ExternalVolume> = {};
+  for (const target of targets) {
+    const entityId = target.volume_entity;
+    const entity = entityId ? states?.[entityId] : undefined;
+    if (!entityId || !entity || entity.state === "unavailable" || entity.state === "unknown") {
+      continue;
+    }
+    const features = Number(entity.attributes.supported_features) || 0;
+    const level = entity.attributes.volume_level;
+    const canSet = (features & FEATURE_VOLUME_SET) !== 0;
+    const canMute = (features & FEATURE_VOLUME_MUTE) !== 0;
+    if (!canSet && !canMute) continue;
+    result[target.device_id] = {
+      entityId,
+      level:
+        typeof level === "number" && Number.isFinite(level)
+          ? Math.round(Math.min(1, Math.max(0, level)) * 100)
+          : null,
+      muted: entity.attributes.is_volume_muted === true,
+      canSet,
+      canMute,
+    };
+  }
+  return result;
 }

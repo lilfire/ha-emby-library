@@ -115,6 +115,8 @@ export interface TargetConfig {
   name: string;
   device_id: string;
   wake_action?: WakeAction;
+  /** A Home Assistant media_player that controls the volume of this client. */
+  volume_entity?: string;
 }
 
 export type StartView = "home" | "library" | "search";
@@ -147,8 +149,23 @@ export interface HassConnection {
   removeEventListener(event: string, callback: () => void): void;
 }
 
+export interface HassEntity {
+  state: string;
+  attributes: Record<string, unknown>;
+}
+
+/** Volume of a client taken from a Home Assistant media_player. */
+export interface ExternalVolume {
+  entityId: string;
+  level: number | null; // 0-100
+  muted: boolean;
+  canSet: boolean;
+  canMute: boolean;
+}
+
 export interface HomeAssistant {
   connection: HassConnection;
+  states?: Record<string, HassEntity>;
   locale?: { language: string };
   language?: string;
   callService(

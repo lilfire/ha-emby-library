@@ -12,6 +12,12 @@ export interface ControlDetail {
   command: ControlCommand;
   value?: number;
 }
+/** Volume change for a client whose volume is a Home Assistant media_player. */
+export interface VolumeDetail {
+  entityId: string;
+  level?: number;
+  muted?: boolean;
+}
 export type TargetChoice =
   | { kind: "session"; session: Session }
   | { kind: "target"; target: TargetConfig };
@@ -21,6 +27,7 @@ declare global {
     "emby-open-item": CustomEvent<OpenItemDetail>;
     "emby-play": CustomEvent<PlayDetail>;
     "emby-control": CustomEvent<ControlDetail>;
+    "emby-volume": CustomEvent<VolumeDetail>;
     "emby-target-chosen": CustomEvent<TargetChoice>;
     "emby-pick-target": CustomEvent<void>;
     "emby-close": CustomEvent<void>;

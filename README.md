@@ -66,6 +66,7 @@ targets:                     # optional, edited in YAML
     wake_action:
       action: script.turn_on
       target: { entity_id: script.start_emby_living_room }
+    volume_entity: media_player.living_room_tv   # optional
 ```
 
 | Field | Default | Description |
@@ -98,6 +99,26 @@ anyway and give it a `wake_action`: any Home Assistant action that turns on the 
 and opens Emby. When you pick such a client, the card runs the action as the logged-in
 Home Assistant user, waits up to 60 seconds for the client to connect to Emby, and then
 starts playback. If it does not show up, the card says "The client did not respond".
+
+### Volume through another media player with `volume_entity`
+
+Some Emby clients do not let Emby set the volume. Emby for Android TV, for example,
+does not announce the SetVolume command, so the card has no volume slider for it. If
+Home Assistant has another `media_player` for the same device (the TV or the receiver),
+name it in `volume_entity` on that client:
+
+```yaml
+targets:
+  - name: Living room TV
+    device_id: 9ef8d0a2...
+    volume_entity: media_player.living_room_tv
+```
+
+Now playing then shows volume and mute for that client and calls
+`media_player.volume_set` and `media_player.volume_mute` on the entity, as the
+logged-in Home Assistant user. It only applies to the client with that `device_id`.
+Other clients keep using Emby's own volume, and so does this one while the entity is
+unavailable. `wake_action` is not required.
 
 ## Compatibility
 

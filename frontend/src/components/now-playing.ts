@@ -5,7 +5,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { fire } from "../events";
 import { translate, type TranslationKey } from "../localize";
 import { sharedStyles } from "../styles";
-import type { ControlCommand, Session } from "../types";
+import type { ControlCommand, ExternalVolume, Session } from "../types";
 import { episodeLabel, formatClock, fraction, interpolatePosition } from "../util";
 
 /** Now playing: one strip per active session, expandable to full control. */
@@ -14,6 +14,9 @@ export class EmbyLibraryNowPlaying extends LitElement {
   @property() language = "en";
 
   @property({ attribute: false }) sessions: Session[] = [];
+
+  /** Volume from Home Assistant for clients with a `volume_entity`, by device_id. */
+  @property({ attribute: false }) volumes: Record<string, ExternalVolume> = {};
 
   /** Time (ms since epoch) when `sessions` was received. */
   @property({ type: Number }) receivedAt = 0;
@@ -170,6 +173,9 @@ export class EmbyLibraryNowPlaying extends LitElement {
     const duration = session.duration_s ?? 0;
     const shownPosition = dragValue(seekKey, position);
     const canSeek = session.can_seek && supports("seek") && duration > 0;
+    // A volume_entity takes precedence; otherwise Emby's own volume is used.
+    const external = this.volumes[session.device_id];
+    const muted = external ? external.muted : session.muted;
     const muteCommand: ControlCommand | null = session.muted
       ? supports("unmute")
         ? "unmute"
@@ -177,6 +183,13 @@ export class EmbyLibraryNowPlaying extends LitElement {
       : supports("mute")
         ? "mute"
         : null;
+    const canMute = external ? external.canMute : muteCommand !== null;
+    const canSetVolume = external ? external.canSet : supports("set_volume");
+    const volume = external ? (external.level ?? 0) : (session.volume ?? 100);
+    const toggleMute = (): void => {
+      if (external) fire(this, "emby-volume", { entityId: external.entityId, muted: !muted });
+      else if (muteCommand) this._send(session, muteCommand);
+    };
 
     return html`
       <div class="controls">
@@ -197,31 +210,40 @@ export class EmbyLibraryNowPlaying extends LitElement {
             : html`<span class="flex"></span>`}
           ${duration > 0 ? html`<span class="time">${formatClock(duration)}</span>` : nothing}
         </div>
-        ${supports("set_volume") || muteCommand
+        ${canSetVolume || canMute
           ? html`<div class="line">
-              ${muteCommand
+              ${canMute
                 ? this._button(
-                    session.muted ? "mdi:volume-off" : "mdi:volume-high",
-                    session.muted ? "np.unmute" : "np.mute",
-                    () => this._send(session, muteCommand),
+                    muted ? "mdi:volume-off" : "mdi:volume-high",
+                    muted ? "np.unmute" : "np.mute",
+                    toggleMute,
                   )
                 : html`<ha-icon class="pad" icon="mdi:volume-high"></ha-icon>`}
-              ${supports("set_volume")
+              ${canSetVolume
                 ? html`<input
                     type="range"
                     min="0"
                     max="100"
                     step="1"
-                    .value=${String(dragValue(volumeKey, session.volume ?? 100))}
+                    .value=${String(dragValue(volumeKey, volume))}
                     aria-label=${this._t("np.volume")}
                     @input=${(event: Event) => this._drag(volumeKey, event)}
-                    @change=${(event: Event) => this._commit(session, "set_volume", event)}
+                    @change=${(event: Event) =>
+                      external
+                        ? this._commitExternal(external, event)
+                        : this._commit(session, "set_volume", event)}
                   />`
                 : nothing}
             </div>`
           : nothing}
       </div>
     `;
+  }
+
+  private _commitExternal(external: ExternalVolume, event: Event): void {
+    const level = Number((event.target as HTMLInputElement).value);
+    fire(this, "emby-volume", { entityId: external.entityId, level });
+    setTimeout(() => (this._dragging = null), 2500);
   }
 
   private _drag(key: string, event: Event): void {
