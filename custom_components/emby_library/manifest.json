@@ -3,7 +3,7 @@
   "name": "Emby Library",
   "codeowners": ["@lilfire"],
   "config_flow": true,
-  "dependencies": ["frontend", "http", "websocket_api"],
+  "dependencies": ["frontend", "http", "lovelace", "websocket_api"],
   "documentation": "https://github.com/lilfire/ha-emby-library",
   "integration_type": "service",
   "iot_class": "local_polling",
