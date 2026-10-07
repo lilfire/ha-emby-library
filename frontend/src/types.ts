@@ -117,6 +117,8 @@ export interface TargetConfig {
   wake_action?: WakeAction;
   /** A Home Assistant media_player that controls the volume of this client. */
   volume_entity?: string;
+  /** A Home Assistant media_player that plays, pauses and stops this client. */
+  control_entity?: string;
 }
 
 export type StartView = "home" | "library" | "search";
@@ -161,6 +163,13 @@ export interface ExternalVolume {
   muted: boolean;
   canSet: boolean;
   canMute: boolean;
+}
+
+/** Playback control of a client through a Home Assistant media_player. */
+export interface ExternalControl {
+  entityId: string;
+  /** Commands the entity takes right now. Empty while another app is in front. */
+  commands: ControlCommand[];
 }
 
 export interface HomeAssistant {

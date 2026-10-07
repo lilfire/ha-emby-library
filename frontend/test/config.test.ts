@@ -63,6 +63,26 @@ describe("validateConfig", () => {
     });
   });
 
+  it("accepts a control_entity next to a volume_entity", () => {
+    const config = validateConfig({
+      type: TYPE,
+      targets: [
+        {
+          name: "TV",
+          device_id: "x",
+          control_entity: "media_player.stuetv_2",
+          volume_entity: "media_player.receiver",
+        },
+      ],
+    });
+    expect(config.targets[0]).toEqual({
+      name: "TV",
+      device_id: "x",
+      control_entity: "media_player.stuetv_2",
+      volume_entity: "media_player.receiver",
+    });
+  });
+
   it.each([
     [{ colour: "red" }, 'Unknown field "colour"'],
     [{ start_view: "music" }, '"start_view" must be one of: home, library, search'],
@@ -95,6 +115,10 @@ describe("validateConfig", () => {
     [
       { targets: [{ name: "TV", device_id: "x", volume_entity: "light.tv" }] },
       '"targets[0].volume_entity" must be a media_player entity',
+    ],
+    [
+      { targets: [{ name: "TV", device_id: "x", control_entity: "remote.tv" }] },
+      '"targets[0].control_entity" must be a media_player entity',
     ],
     [{ start_view: "search", show_search: false }, 'requires "show_search: true"'],
   ])("rejects %j with a readable error", (extra, message) => {

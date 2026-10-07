@@ -42,6 +42,9 @@ audiobooks, photos, live TV, `media_player` entities and server administration.
    Enter the server address and the API key, then pick the Emby user whose library,
    progress and recommendations the card should show.
 5. Add the card **Emby Library** from the card picker. No Lovelace resource has to be added.
+   The integration registers the card as a dashboard resource by itself and keeps the
+   address up to date. If you manage dashboard resources in YAML (`resource_mode: yaml`),
+   the card is loaded as an extra frontend module instead and no resource entry is needed.
 
 To show a second Emby user, add the integration once more and pick the other user.
 
@@ -67,6 +70,7 @@ targets:                     # optional, edited in YAML
       action: script.turn_on
       target: { entity_id: script.start_emby_living_room }
     volume_entity: media_player.living_room_tv   # optional
+    control_entity: media_player.living_room_tv  # optional
 ```
 
 | Field | Default | Description |
@@ -119,6 +123,34 @@ Now playing then shows volume and mute for that client and calls
 logged-in Home Assistant user. It only applies to the client with that `device_id`.
 Other clients keep using Emby's own volume, and so does this one while the entity is
 unavailable. `wake_action` is not required.
+
+### Play, pause and stop through another media player with `control_entity`
+
+Some Emby clients ignore Emby's remote control for playback. Emby for Android TV
+1.8.54g, for example, starts a movie when asked, but Pause and Stop have no effect, also
+from Emby's own dashboard. If Home Assistant has another `media_player` for the same
+device, name it in `control_entity` on that client:
+
+```yaml
+targets:
+  - name: Living room TV
+    device_id: 9ef8d0a2...
+    control_entity: media_player.living_room_tv
+```
+
+The buttons for play, pause, stop, next and previous in Now playing then call
+`media_player.media_play`, `media_pause`, `media_stop`, `media_next_track` and
+`media_previous_track` on the entity, as the logged-in Home Assistant user. A button is
+shown only when the entity supports that action.
+
+- What is playing, the position and whether it is paused still come from Emby, so the
+  card follows along a moment after you press a button.
+- These actions go to whatever app is in front on the device. When the entity reports
+  the app (`app_id` or `app_name`) and it is not Emby, the buttons are hidden. An entity
+  that does not report the app cannot be checked.
+- Seeking and starting playback still go through Emby, and volume follows
+  `volume_entity`. The same entity can be used for both.
+- While the entity is unavailable, the card uses Emby's own commands again.
 
 ## Compatibility
 

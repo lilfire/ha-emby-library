@@ -5,7 +5,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { fire } from "../events";
 import { translate, type TranslationKey } from "../localize";
 import { sharedStyles } from "../styles";
-import type { ControlCommand, ExternalVolume, Session } from "../types";
+import type { ControlCommand, ExternalControl, ExternalVolume, Session } from "../types";
 import { episodeLabel, formatClock, fraction, interpolatePosition } from "../util";
 
 /** Now playing: one strip per active session, expandable to full control. */
@@ -17,6 +17,9 @@ export class EmbyLibraryNowPlaying extends LitElement {
 
   /** Volume from Home Assistant for clients with a `volume_entity`, by device_id. */
   @property({ attribute: false }) volumes: Record<string, ExternalVolume> = {};
+
+  /** Playback control from Home Assistant for clients with a `control_entity`, by device_id. */
+  @property({ attribute: false }) controls: Record<string, ExternalControl> = {};
 
   /** Time (ms since epoch) when `sessions` was received. */
   @property({ type: Number }) receivedAt = 0;
@@ -82,7 +85,14 @@ export class EmbyLibraryNowPlaying extends LitElement {
 
   private _renderSession(session: Session): TemplateResult {
     const item = session.now_playing!;
-    const supports = (command: ControlCommand) => session.supported_commands.includes(command);
+    // A control_entity takes over the playback buttons; seek and volume are not affected.
+    const external = this.controls[session.device_id];
+    const supports = (command: ControlCommand) =>
+      (external ? external.commands : session.supported_commands).includes(command);
+    const send = (command: ControlCommand): void => {
+      if (external) fire(this, "emby-media", { entityId: external.entityId, command });
+      else this._send(session, command);
+    };
     const expanded = this._expanded === session.session_id;
     const position = interpolatePosition(session, this._now - this.receivedAt);
     const image = item.images.still ?? item.images.poster;
@@ -131,22 +141,20 @@ export class EmbyLibraryNowPlaying extends LitElement {
           </button>
           <div class="buttons">
             ${supports("previous")
-              ? this._button("mdi:skip-previous", "np.previous", () =>
-                  this._send(session, "previous"),
-                )
+              ? this._button("mdi:skip-previous", "np.previous", () => send("previous"))
               : nothing}
             ${toggleCommand
               ? this._button(
                   playing ? "mdi:pause" : "mdi:play",
                   playing ? "np.pause" : "np.play",
-                  () => this._send(session, toggleCommand),
+                  () => send(toggleCommand),
                 )
               : nothing}
             ${supports("next")
-              ? this._button("mdi:skip-next", "np.next", () => this._send(session, "next"))
+              ? this._button("mdi:skip-next", "np.next", () => send("next"))
               : nothing}
             ${supports("stop")
-              ? this._button("mdi:stop", "np.stop", () => this._send(session, "stop"))
+              ? this._button("mdi:stop", "np.stop", () => send("stop"))
               : nothing}
           </div>
         </div>

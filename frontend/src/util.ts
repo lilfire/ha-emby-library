@@ -1,6 +1,14 @@
 // Pure helpers: image choice, formatting, position interpolation and target choice.
 
-import type { ExternalVolume, HassEntity, Item, Session, TargetConfig } from "./types";
+import type {
+  ControlCommand,
+  ExternalControl,
+  ExternalVolume,
+  HassEntity,
+  Item,
+  Session,
+  TargetConfig,
+} from "./types";
 
 export type ImageShape = "poster" | "still";
 
@@ -170,6 +178,51 @@ export function externalVolumes(
       canSet,
       canMute,
     };
+  }
+  return result;
+}
+
+/** Playback features of a media_player, and the card command each one serves. */
+const TRANSPORT_FEATURES: readonly (readonly [ControlCommand, number])[] = [
+  ["pause", 1],
+  ["previous", 16],
+  ["next", 32],
+  ["stop", 4096],
+  ["play", 16384],
+];
+
+/** False when the entity names the app in front and that app is not Emby. */
+function embyInFront(entity: HassEntity): boolean {
+  const apps = [entity.attributes.app_id, entity.attributes.app_name].filter(
+    (app): app is string => typeof app === "string" && app !== "",
+  );
+  return apps.length === 0 || apps.some((app) => /emby/i.test(app));
+}
+
+/**
+ * Playback control for each client that has a `control_entity`, keyed by device_id.
+ * Entities that are missing, unavailable or without playback features are left
+ * out, so the card falls back to Emby's own commands for that client. While the
+ * entity reports another app than Emby in front, it takes no commands at all:
+ * they would reach the wrong app.
+ */
+export function externalControls(
+  targets: readonly TargetConfig[],
+  states: Record<string, HassEntity> | undefined,
+): Record<string, ExternalControl> {
+  const result: Record<string, ExternalControl> = {};
+  for (const target of targets) {
+    const entityId = target.control_entity;
+    const entity = entityId ? states?.[entityId] : undefined;
+    if (!entityId || !entity || entity.state === "unavailable" || entity.state === "unknown") {
+      continue;
+    }
+    const features = Number(entity.attributes.supported_features) || 0;
+    const commands = TRANSPORT_FEATURES.filter(([, bit]) => (features & bit) !== 0).map(
+      ([command]) => command,
+    );
+    if (commands.length === 0) continue;
+    result[target.device_id] = { entityId, commands: embyInFront(entity) ? commands : [] };
   }
   return result;
 }

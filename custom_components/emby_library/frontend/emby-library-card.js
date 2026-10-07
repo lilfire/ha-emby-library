@@ -22,7 +22,7 @@ let ot = class {
     return this.cssText;
   }
 };
-const ft = (e) => new ot(typeof e == "string" ? e : e + "", void 0, Ie), M = (e, ...t) => {
+const ft = (e) => new ot(typeof e == "string" ? e : e + "", void 0, Ie), I = (e, ...t) => {
   const i = e.length === 1 ? e[0] : t.reduce((s, r, n) => s + ((o) => {
     if (o._$cssResult$ === !0) return o.cssText;
     if (typeof o == "number") return o;
@@ -75,7 +75,7 @@ const { is: vt, defineProperty: bt, getOwnPropertyDescriptor: $t, getOwnProperty
   return i;
 } }, Ne = (e, t) => !vt(e, t), He = { attribute: !0, type: String, converter: ve, reflect: !1, useDefault: !1, hasChanged: Ne };
 Symbol.metadata ??= Symbol("metadata"), we.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
-let X = class extends HTMLElement {
+let J = class extends HTMLElement {
   static addInitializer(t) {
     this._$Ei(), (this.l ??= []).push(t);
   }
@@ -256,13 +256,13 @@ let X = class extends HTMLElement {
   firstUpdated(t) {
   }
 };
-X.elementStyles = [], X.shadowRootOptions = { mode: "open" }, X[le("elementProperties")] = /* @__PURE__ */ new Map(), X[le("finalized")] = /* @__PURE__ */ new Map(), Et?.({ ReactiveElement: X }), (we.reactiveElementVersions ??= []).push("2.1.2");
+J.elementStyles = [], J.shadowRootOptions = { mode: "open" }, J[le("elementProperties")] = /* @__PURE__ */ new Map(), J[le("finalized")] = /* @__PURE__ */ new Map(), Et?.({ ReactiveElement: J }), (we.reactiveElementVersions ??= []).push("2.1.2");
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const De = globalThis, Ke = (e) => e, be = De.trustedTypes, Ve = be ? be.createPolicy("lit-html", { createHTML: (e) => e }) : void 0, at = "$lit$", L = `lit$${Math.random().toFixed(9).slice(2)}$`, lt = "?" + L, At = `<${lt}>`, W = document, ce = () => W.createComment(""), de = (e) => e === null || typeof e != "object" && typeof e != "function", Re = Array.isArray, Ct = (e) => Re(e) || typeof e?.[Symbol.iterator] == "function", ke = `[ 	
+const De = globalThis, Ke = (e) => e, be = De.trustedTypes, Ve = be ? be.createPolicy("lit-html", { createHTML: (e) => e }) : void 0, at = "$lit$", U = `lit$${Math.random().toFixed(9).slice(2)}$`, lt = "?" + U, At = `<${lt}>`, W = document, ce = () => W.createComment(""), de = (e) => e === null || typeof e != "object" && typeof e != "function", Re = Array.isArray, Ct = (e) => Re(e) || typeof e?.[Symbol.iterator] == "function", ke = `[ 	
 \f\r]`, oe = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, Be = /-->/g, Fe = />/g, B = RegExp(`>|${ke}(?:([^\\s"'>=/]+)(${ke}*=${ke}*(?:[^ 	
 \f\r"'\`<>=]|("|')|))|$)`, "g"), qe = /'/g, We = /"/g, ht = /^(?:script|style|textarea|title)$/i, Pt = (e) => (t, ...i) => ({ _$litType$: e, strings: t, values: i }), a = Pt(1), Y = Symbol.for("lit-noChange"), c = Symbol.for("lit-nothing"), Ye = /* @__PURE__ */ new WeakMap(), q = W.createTreeWalker(W, 129);
 function ct(e, t) {
@@ -274,10 +274,10 @@ const Ot = (e, t) => {
   let r, n = t === 2 ? "<svg>" : t === 3 ? "<math>" : "", o = oe;
   for (let l = 0; l < i; l++) {
     const h = e[l];
-    let u, f, p = -1, g = 0;
-    for (; g < h.length && (o.lastIndex = g, f = o.exec(h), f !== null); ) g = o.lastIndex, o === oe ? f[1] === "!--" ? o = Be : f[1] !== void 0 ? o = Fe : f[2] !== void 0 ? (ht.test(f[2]) && (r = RegExp("</" + f[2], "g")), o = B) : f[3] !== void 0 && (o = B) : o === B ? f[0] === ">" ? (o = r ?? oe, p = -1) : f[1] === void 0 ? p = -2 : (p = o.lastIndex - f[2].length, u = f[1], o = f[3] === void 0 ? B : f[3] === '"' ? We : qe) : o === We || o === qe ? o = B : o === Be || o === Fe ? o = oe : (o = B, r = void 0);
-    const m = o === B && e[l + 1].startsWith("/>") ? " " : "";
-    n += o === oe ? h + At : p >= 0 ? (s.push(u), h.slice(0, p) + at + h.slice(p) + L + m) : h + L + (p === -2 ? l : m);
+    let u, f, p = -1, _ = 0;
+    for (; _ < h.length && (o.lastIndex = _, f = o.exec(h), f !== null); ) _ = o.lastIndex, o === oe ? f[1] === "!--" ? o = Be : f[1] !== void 0 ? o = Fe : f[2] !== void 0 ? (ht.test(f[2]) && (r = RegExp("</" + f[2], "g")), o = B) : f[3] !== void 0 && (o = B) : o === B ? f[0] === ">" ? (o = r ?? oe, p = -1) : f[1] === void 0 ? p = -2 : (p = o.lastIndex - f[2].length, u = f[1], o = f[3] === void 0 ? B : f[3] === '"' ? We : qe) : o === We || o === qe ? o = B : o === Be || o === Fe ? o = oe : (o = B, r = void 0);
+    const g = o === B && e[l + 1].startsWith("/>") ? " " : "";
+    n += o === oe ? h + At : p >= 0 ? (s.push(u), h.slice(0, p) + at + h.slice(p) + U + g) : h + U + (p === -2 ? l : g);
   }
   return [ct(e, n + (e[i] || "<?>") + (t === 2 ? "</svg>" : t === 3 ? "</math>" : "")), s];
 };
@@ -294,21 +294,21 @@ class pe {
     for (; (r = q.nextNode()) !== null && h.length < l; ) {
       if (r.nodeType === 1) {
         if (r.hasAttributes()) for (const p of r.getAttributeNames()) if (p.endsWith(at)) {
-          const g = f[o++], m = r.getAttribute(p).split(L), y = /([.?@])?(.*)/.exec(g);
-          h.push({ type: 1, index: n, name: y[2], strings: m, ctor: y[1] === "." ? Tt : y[1] === "?" ? It : y[1] === "@" ? Nt : xe }), r.removeAttribute(p);
-        } else p.startsWith(L) && (h.push({ type: 6, index: n }), r.removeAttribute(p));
+          const _ = f[o++], g = r.getAttribute(p).split(U), y = /([.?@])?(.*)/.exec(_);
+          h.push({ type: 1, index: n, name: y[2], strings: g, ctor: y[1] === "." ? Tt : y[1] === "?" ? It : y[1] === "@" ? Nt : xe }), r.removeAttribute(p);
+        } else p.startsWith(U) && (h.push({ type: 6, index: n }), r.removeAttribute(p));
         if (ht.test(r.tagName)) {
-          const p = r.textContent.split(L), g = p.length - 1;
-          if (g > 0) {
+          const p = r.textContent.split(U), _ = p.length - 1;
+          if (_ > 0) {
             r.textContent = be ? be.emptyScript : "";
-            for (let m = 0; m < g; m++) r.append(p[m], ce()), q.nextNode(), h.push({ type: 2, index: ++n });
-            r.append(p[g], ce());
+            for (let g = 0; g < _; g++) r.append(p[g], ce()), q.nextNode(), h.push({ type: 2, index: ++n });
+            r.append(p[_], ce());
           }
         }
       } else if (r.nodeType === 8) if (r.data === lt) h.push({ type: 2, index: n });
       else {
         let p = -1;
-        for (; (p = r.data.indexOf(L, p + 1)) !== -1; ) h.push({ type: 7, index: n }), p += L.length - 1;
+        for (; (p = r.data.indexOf(U, p + 1)) !== -1; ) h.push({ type: 7, index: n }), p += U.length - 1;
       }
       n++;
     }
@@ -493,7 +493,7 @@ const jt = (e, t, i) => {
  * SPDX-License-Identifier: BSD-3-Clause
  */
 const ze = globalThis;
-let E = class extends X {
+let E = class extends J {
   constructor() {
     super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
   }
@@ -555,7 +555,7 @@ const Ut = { attribute: !0, type: String, converter: ve, reflect: !1, hasChanged
   }
   throw Error("Unsupported decorator location: " + s);
 };
-function _(e) {
+function m(e) {
   return (t, i) => typeof i == "object" ? Ht(e, t, i) : ((s, r, n) => {
     const o = r.hasOwnProperty(n);
     return r.constructor.createProperty(n, s), o ? Object.getOwnPropertyDescriptor(r, n) : void 0;
@@ -567,7 +567,7 @@ function _(e) {
  * SPDX-License-Identifier: BSD-3-Clause
  */
 function d(e) {
-  return _({ ...e, state: !0, attribute: !1 });
+  return m({ ...e, state: !0, attribute: !1 });
 }
 /**
  * @license
@@ -643,7 +643,7 @@ const { I: qt } = Rt, Ge = (e) => e, Ze = () => document.createComment(""), ae =
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const Xe = (e, t, i) => {
+const Je = (e, t, i) => {
   const s = /* @__PURE__ */ new Map();
   for (let r = t; r <= i; r++) s.set(e[r], r);
   return s;
@@ -666,27 +666,27 @@ const Xe = (e, t, i) => {
     const r = Gt(e), { values: n, keys: o } = this.dt(t, i, s);
     if (!Array.isArray(r)) return this.ut = o, n;
     const l = this.ut ??= [], h = [];
-    let u, f, p = 0, g = r.length - 1, m = 0, y = n.length - 1;
-    for (; p <= g && m <= y; ) if (r[p] === null) p++;
-    else if (r[g] === null) g--;
-    else if (l[p] === o[m]) h[m] = F(r[p], n[m]), p++, m++;
-    else if (l[g] === o[y]) h[y] = F(r[g], n[y]), g--, y--;
+    let u, f, p = 0, _ = r.length - 1, g = 0, y = n.length - 1;
+    for (; p <= _ && g <= y; ) if (r[p] === null) p++;
+    else if (r[_] === null) _--;
+    else if (l[p] === o[g]) h[g] = F(r[p], n[g]), p++, g++;
+    else if (l[_] === o[y]) h[y] = F(r[_], n[y]), _--, y--;
     else if (l[p] === o[y]) h[y] = F(r[p], n[y]), ae(e, h[y + 1], r[p]), p++, y--;
-    else if (l[g] === o[m]) h[m] = F(r[g], n[m]), ae(e, r[p], r[g]), g--, m++;
-    else if (u === void 0 && (u = Xe(o, m, y), f = Xe(l, p, g)), u.has(l[p])) if (u.has(l[g])) {
-      const P = f.get(o[m]), x = P !== void 0 ? r[P] : null;
-      if (x === null) {
+    else if (l[_] === o[g]) h[g] = F(r[_], n[g]), ae(e, r[p], r[_]), _--, g++;
+    else if (u === void 0 && (u = Je(o, g, y), f = Je(l, p, _)), u.has(l[p])) if (u.has(l[_])) {
+      const P = f.get(o[g]), k = P !== void 0 ? r[P] : null;
+      if (k === null) {
         const ge = ae(e, r[p]);
-        F(ge, n[m]), h[m] = ge;
-      } else h[m] = F(x, n[m]), ae(e, r[p], x), r[P] = null;
-      m++;
-    } else Se(r[g]), g--;
+        F(ge, n[g]), h[g] = ge;
+      } else h[g] = F(k, n[g]), ae(e, r[p], k), r[P] = null;
+      g++;
+    } else Se(r[_]), _--;
     else Se(r[p]), p++;
-    for (; m <= y; ) {
+    for (; g <= y; ) {
       const P = ae(e, h[y + 1]);
-      F(P, n[m]), h[m++] = P;
+      F(P, n[g]), h[g++] = P;
     }
-    for (; p <= g; ) {
+    for (; p <= _; ) {
       const P = r[p++];
       P !== null && Se(P);
     }
@@ -702,15 +702,15 @@ const Xe = (e, t, i) => {
   "not_controllable",
   "unsupported_command"
 ];
-class Je extends Error {
+class Xe extends Error {
   constructor(t, i) {
     super(i), this.name = "EmbyApiError", this.code = t;
   }
 }
-function O(e) {
-  if (e instanceof Je) return e;
+function M(e) {
+  if (e instanceof Xe) return e;
   const t = e ?? {}, i = Zt.find((s) => s === t.code) ?? "unknown";
-  return new Je(i, typeof t.message == "string" ? t.message : String(e));
+  return new Xe(i, typeof t.message == "string" ? t.message : String(e));
 }
 class $e {
   constructor(t, i) {
@@ -724,7 +724,7 @@ class $e {
     try {
       return await this.hass.connection.sendMessagePromise(s);
     } catch (r) {
-      throw O(r);
+      throw M(r);
     }
   }
   async entries() {
@@ -774,11 +774,11 @@ class $e {
         });
       };
     } catch (s) {
-      throw O(s);
+      throw M(s);
     }
   }
 }
-function T(e, t, i) {
+function O(e, t, i) {
   e.dispatchEvent(new CustomEvent(t, { detail: i, bubbles: !0, composed: !0 }));
 }
 const Oe = {
@@ -988,7 +988,7 @@ function A(e, t, i = {}) {
     n = n.replaceAll(`{${o}}`, String(l));
   return n;
 }
-const j = M`
+const j = I`
   :host {
     --el-gap: 12px;
     --el-radius: var(--ha-card-border-radius, 12px);
@@ -1128,7 +1128,7 @@ const j = M`
     white-space: nowrap;
   }
 `;
-function Xt(e, t) {
+function Jt(e, t) {
   const { poster: i, still: s, backdrop: r } = e.images;
   return t === "poster" ? i ?? null : s ?? r ?? null;
 }
@@ -1151,7 +1151,7 @@ function Me(e) {
   const t = pt(e);
   return t ? `${t} · ${e.name}` : e.name;
 }
-function Jt(e) {
+function Xt(e) {
   return e.type === "Episode" ? e.series_name ? { title: e.series_name, subtitle: Me(e) } : { title: Me(e), subtitle: "" } : { title: e.name, subtitle: e.year !== null ? String(e.year) : "" };
 }
 function Qt(e, t) {
@@ -1202,14 +1202,40 @@ function oi(e, t) {
   }
   return i;
 }
-var ai = Object.defineProperty, li = Object.getOwnPropertyDescriptor, K = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? li(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+const ai = [
+  ["pause", 1],
+  ["previous", 16],
+  ["next", 32],
+  ["stop", 4096],
+  ["play", 16384]
+];
+function li(e) {
+  const t = [e.attributes.app_id, e.attributes.app_name].filter(
+    (i) => typeof i == "string" && i !== ""
+  );
+  return t.length === 0 || t.some((i) => /emby/i.test(i));
+}
+function hi(e, t) {
+  const i = {};
+  for (const s of e) {
+    const r = s.control_entity, n = r ? t?.[r] : void 0;
+    if (!r || !n || n.state === "unavailable" || n.state === "unknown")
+      continue;
+    const o = Number(n.attributes.supported_features) || 0, l = ai.filter(([, h]) => (o & h) !== 0).map(
+      ([h]) => h
+    );
+    l.length !== 0 && (i[s.device_id] = { entityId: r, commands: li(n) ? l : [] });
+  }
+  return i;
+}
+var ci = Object.defineProperty, di = Object.getOwnPropertyDescriptor, L = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? di(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && ai(t, i, r), r;
+  return s && r && ci(t, i, r), r;
 };
-let I = class extends E {
+let T = class extends E {
   constructor() {
-    super(...arguments), this.language = "en", this.sessions = [], this.volumes = {}, this.receivedAt = 0, this._now = Date.now(), this._expanded = null, this._dragging = null;
+    super(...arguments), this.language = "en", this.sessions = [], this.volumes = {}, this.controls = {}, this.receivedAt = 0, this._now = Date.now(), this._expanded = null, this._dragging = null;
   }
   _t(e, t) {
     return A(this.language, e, t);
@@ -1224,7 +1250,7 @@ let I = class extends E {
     clearInterval(this._ticker), this._ticker = void 0;
   }
   _send(e, t, i) {
-    T(this, "emby-control", { sessionId: e.session_id, command: t, value: i });
+    O(this, "emby-control", { sessionId: e.session_id, command: t, value: i });
   }
   _toggle(e) {
     this._expanded = this._expanded === e.session_id ? null : e.session_id;
@@ -1244,52 +1270,50 @@ let I = class extends E {
     `;
   }
   _renderSession(e) {
-    const t = e.now_playing, i = (f) => e.supported_commands.includes(f), s = this._expanded === e.session_id, r = Qt(e, this._now - this.receivedAt), n = t.images.still ?? t.images.poster, o = t.type === "Episode" && t.series_name ? t.series_name : t.name, l = t.type === "Episode" ? Me(t) : "", h = e.state === "playing", u = h ? i("pause") ? "pause" : i("play_pause") ? "play_pause" : null : i("play") ? "play" : i("play_pause") ? "play_pause" : null;
+    const t = e.now_playing, i = this.controls[e.device_id], s = (_) => (i ? i.commands : e.supported_commands).includes(_), r = (_) => {
+      i ? O(this, "emby-media", { entityId: i.entityId, command: _ }) : this._send(e, _);
+    }, n = this._expanded === e.session_id, o = Qt(e, this._now - this.receivedAt), l = t.images.still ?? t.images.poster, h = t.type === "Episode" && t.series_name ? t.series_name : t.name, u = t.type === "Episode" ? Me(t) : "", f = e.state === "playing", p = f ? s("pause") ? "pause" : s("play_pause") ? "play_pause" : null : s("play") ? "play" : s("play_pause") ? "play_pause" : null;
     return a`
       <div class="session">
         <div class="strip">
           <button
             class="summary"
-            aria-expanded=${s ? "true" : "false"}
-            aria-label=${this._t(s ? "np.collapse" : "np.expand", {
+            aria-expanded=${n ? "true" : "false"}
+            aria-label=${this._t(n ? "np.collapse" : "np.expand", {
       device: e.device_name
     })}
             @click=${() => this._toggle(e)}
           >
             <span class="thumb">
-              ${n ? a`<img
-                    src=${n}
+              ${l ? a`<img
+                    src=${l}
                     alt=${t.name}
                     decoding="async"
-                    @error=${(f) => f.target.remove()}
+                    @error=${(_) => _.target.remove()}
                   />` : a`<ha-icon icon="mdi:play-box-outline"></ha-icon>`}
             </span>
             <span class="text">
-              <span class="title">${o}</span>
+              <span class="title">${h}</span>
               <span class="muted small">
-                ${l ? a`${l} · ` : c}${e.device_name}
+                ${u ? a`${u} · ` : c}${e.device_name}
               </span>
             </span>
           </button>
           <div class="buttons">
-            ${i("previous") ? this._button(
-      "mdi:skip-previous",
-      "np.previous",
-      () => this._send(e, "previous")
+            ${s("previous") ? this._button("mdi:skip-previous", "np.previous", () => r("previous")) : c}
+            ${p ? this._button(
+      f ? "mdi:pause" : "mdi:play",
+      f ? "np.pause" : "np.play",
+      () => r(p)
     ) : c}
-            ${u ? this._button(
-      h ? "mdi:pause" : "mdi:play",
-      h ? "np.pause" : "np.play",
-      () => this._send(e, u)
-    ) : c}
-            ${i("next") ? this._button("mdi:skip-next", "np.next", () => this._send(e, "next")) : c}
-            ${i("stop") ? this._button("mdi:stop", "np.stop", () => this._send(e, "stop")) : c}
+            ${s("next") ? this._button("mdi:skip-next", "np.next", () => r("next")) : c}
+            ${s("stop") ? this._button("mdi:stop", "np.stop", () => r("stop")) : c}
           </div>
         </div>
         <div class="bar" aria-hidden="true">
-          <div style="width:${(ei(r, e.duration_s) * 100).toFixed(2)}%"></div>
+          <div style="width:${(ei(o, e.duration_s) * 100).toFixed(2)}%"></div>
         </div>
-        ${s ? this._renderControls(e, r) : c}
+        ${n ? this._renderControls(e, o) : c}
       </div>
     `;
   }
@@ -1299,8 +1323,8 @@ let I = class extends E {
     </button>`;
   }
   _renderControls(e, t) {
-    const i = (x) => e.supported_commands.includes(x), s = `seek:${e.session_id}`, r = `volume:${e.session_id}`, n = (x, ge) => this._dragging?.key === x ? this._dragging.value : ge, o = e.duration_s ?? 0, l = n(s, t), h = e.can_seek && i("seek") && o > 0, u = this.volumes[e.device_id], f = u ? u.muted : e.muted, p = e.muted ? i("unmute") ? "unmute" : null : i("mute") ? "mute" : null, g = u ? u.canMute : p !== null, m = u ? u.canSet : i("set_volume"), y = u ? u.level ?? 0 : e.volume ?? 100, P = () => {
-      u ? T(this, "emby-volume", { entityId: u.entityId, muted: !f }) : p && this._send(e, p);
+    const i = (k) => e.supported_commands.includes(k), s = `seek:${e.session_id}`, r = `volume:${e.session_id}`, n = (k, ge) => this._dragging?.key === k ? this._dragging.value : ge, o = e.duration_s ?? 0, l = n(s, t), h = e.can_seek && i("seek") && o > 0, u = this.volumes[e.device_id], f = u ? u.muted : e.muted, p = e.muted ? i("unmute") ? "unmute" : null : i("mute") ? "mute" : null, _ = u ? u.canMute : p !== null, g = u ? u.canSet : i("set_volume"), y = u ? u.level ?? 0 : e.volume ?? 100, P = () => {
+      u ? O(this, "emby-volume", { entityId: u.entityId, muted: !f }) : p && this._send(e, p);
     };
     return a`
       <div class="controls">
@@ -1314,26 +1338,26 @@ let I = class extends E {
                 .value=${String(Math.floor(l))}
                 aria-label=${this._t("np.seek")}
                 aria-valuetext=${Ee(l)}
-                @input=${(x) => this._drag(s, x)}
-                @change=${(x) => this._commit(e, "seek", x)}
+                @input=${(k) => this._drag(s, k)}
+                @change=${(k) => this._commit(e, "seek", k)}
               />` : a`<span class="flex"></span>`}
           ${o > 0 ? a`<span class="time">${Ee(o)}</span>` : c}
         </div>
-        ${m || g ? a`<div class="line">
-              ${g ? this._button(
+        ${g || _ ? a`<div class="line">
+              ${_ ? this._button(
       f ? "mdi:volume-off" : "mdi:volume-high",
       f ? "np.unmute" : "np.mute",
       P
     ) : a`<ha-icon class="pad" icon="mdi:volume-high"></ha-icon>`}
-              ${m ? a`<input
+              ${g ? a`<input
                     type="range"
                     min="0"
                     max="100"
                     step="1"
                     .value=${String(n(r, y))}
                     aria-label=${this._t("np.volume")}
-                    @input=${(x) => this._drag(r, x)}
-                    @change=${(x) => u ? this._commitExternal(u, x) : this._commit(e, "set_volume", x)}
+                    @input=${(k) => this._drag(r, k)}
+                    @change=${(k) => u ? this._commitExternal(u, k) : this._commit(e, "set_volume", k)}
                   />` : c}
             </div>` : c}
       </div>
@@ -1341,7 +1365,7 @@ let I = class extends E {
   }
   _commitExternal(e, t) {
     const i = Number(t.target.value);
-    T(this, "emby-volume", { entityId: e.entityId, level: i }), setTimeout(() => this._dragging = null, 2500);
+    O(this, "emby-volume", { entityId: e.entityId, level: i }), setTimeout(() => this._dragging = null, 2500);
   }
   _drag(e, t) {
     this._dragging = { key: e, value: Number(t.target.value) };
@@ -1351,9 +1375,9 @@ let I = class extends E {
     this._send(e, t, s), setTimeout(() => this._dragging = null, 2500);
   }
 };
-I.styles = [
+T.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
         container-type: inline-size;
@@ -1469,36 +1493,39 @@ I.styles = [
       }
     `
 ];
-K([
-  _()
-], I.prototype, "language", 2);
-K([
-  _({ attribute: !1 })
-], I.prototype, "sessions", 2);
-K([
-  _({ attribute: !1 })
-], I.prototype, "volumes", 2);
-K([
-  _({ type: Number })
-], I.prototype, "receivedAt", 2);
-K([
+L([
+  m()
+], T.prototype, "language", 2);
+L([
+  m({ attribute: !1 })
+], T.prototype, "sessions", 2);
+L([
+  m({ attribute: !1 })
+], T.prototype, "volumes", 2);
+L([
+  m({ attribute: !1 })
+], T.prototype, "controls", 2);
+L([
+  m({ type: Number })
+], T.prototype, "receivedAt", 2);
+L([
   d()
-], I.prototype, "_now", 2);
-K([
+], T.prototype, "_now", 2);
+L([
   d()
-], I.prototype, "_expanded", 2);
-K([
+], T.prototype, "_expanded", 2);
+L([
   d()
-], I.prototype, "_dragging", 2);
-I = K([
+], T.prototype, "_dragging", 2);
+T = L([
   D("emby-library-now-playing")
-], I);
-var hi = Object.defineProperty, ci = Object.getOwnPropertyDescriptor, re = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? ci(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+], T);
+var pi = Object.defineProperty, ui = Object.getOwnPropertyDescriptor, re = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? ui(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && hi(t, i, r), r;
+  return s && r && pi(t, i, r), r;
 };
-let U = class extends E {
+let H = class extends E {
   constructor() {
     super(...arguments), this.language = "en", this.sessions = [], this.targets = [], this.selectedDeviceId = null;
   }
@@ -1510,7 +1537,7 @@ let U = class extends E {
     e && !e.open && (typeof e.showModal == "function" ? e.showModal() : e.setAttribute("open", ""));
   }
   _close() {
-    T(this, "emby-close");
+    O(this, "emby-close");
   }
   _onCancel(e) {
     e.preventDefault(), this._close();
@@ -1519,7 +1546,7 @@ let U = class extends E {
     e.target === this._dialog && this._close();
   }
   _choose(e) {
-    T(this, "emby-target-chosen", e);
+    O(this, "emby-target-chosen", e);
   }
   render() {
     const e = this.sessions.filter((r) => r.controllable), t = new Set(e.map((r) => r.device_id)), i = this.targets.filter((r) => !t.has(r.device_id)), s = new Map(this.targets.map((r) => [r.device_id, r.name]));
@@ -1587,9 +1614,9 @@ let U = class extends E {
     `;
   }
 };
-U.styles = [
+H.styles = [
   j,
-  M`
+  I`
       dialog {
         width: min(420px, calc(100vw - 32px));
         max-height: min(560px, calc(100vh - 32px));
@@ -1660,26 +1687,26 @@ U.styles = [
     `
 ];
 re([
-  _()
-], U.prototype, "language", 2);
+  m()
+], H.prototype, "language", 2);
 re([
-  _({ attribute: !1 })
-], U.prototype, "sessions", 2);
+  m({ attribute: !1 })
+], H.prototype, "sessions", 2);
 re([
-  _({ attribute: !1 })
-], U.prototype, "targets", 2);
+  m({ attribute: !1 })
+], H.prototype, "targets", 2);
 re([
-  _({ attribute: !1 })
-], U.prototype, "selectedDeviceId", 2);
+  m({ attribute: !1 })
+], H.prototype, "selectedDeviceId", 2);
 re([
   ie("dialog")
-], U.prototype, "_dialog", 2);
-U = re([
+], H.prototype, "_dialog", 2);
+H = re([
   D("emby-library-target-picker")
-], U);
-const J = ["resume", "next_up", "latest", "suggestions"], ut = ["home", "library", "search"], _t = ["small", "medium", "large"], di = { small: 110, medium: 150, large: 190 }, Q = {
+], H);
+const X = ["resume", "next_up", "latest", "suggestions"], ut = ["home", "library", "search"], _t = ["small", "medium", "large"], _i = { small: 110, medium: 150, large: 190 }, Q = {
   start_view: "home",
-  shelves: [...J],
+  shelves: [...X],
   shelf_limit: 20,
   show_now_playing: !0,
   show_search: !0,
@@ -1687,7 +1714,7 @@ const J = ["resume", "next_up", "latest", "suggestions"], ut = ["home", "library
   height: "auto",
   default_target: null,
   targets: []
-}, pi = ["type", "view_layout", "layout_options", "grid_options", "visibility"], ui = [...pi, "entry", ...Object.keys(Q)], he = (e) => typeof e == "object" && e !== null && !Array.isArray(e);
+}, mi = ["type", "view_layout", "layout_options", "grid_options", "visibility"], gi = [...mi, "entry", ...Object.keys(Q)], he = (e) => typeof e == "object" && e !== null && !Array.isArray(e);
 function Ae(e, t, i) {
   if (typeof t != "string" || !i.includes(t))
     throw new Error(`"${e}" must be one of: ${i.join(", ")}`);
@@ -1697,7 +1724,7 @@ function rt(e, t) {
   if (typeof t != "boolean") throw new Error(`"${e}" must be true or false`);
   return t;
 }
-function _i(e, t) {
+function fi(e, t) {
   if (!he(t)) throw new Error(`"${e}" must be an action`);
   const i = t.action ?? t.service;
   if (typeof i != "string" || !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(i))
@@ -1713,24 +1740,27 @@ function _i(e, t) {
   }
   return s;
 }
-function mi(e) {
+function yi(e) {
   if (!Array.isArray(e)) throw new Error('"targets" must be a list');
   return e.map((t, i) => {
     const s = `targets[${i}]`;
     if (!he(t)) throw new Error(`"${s}" must be a mapping`);
     for (const n of Object.keys(t))
-      if (!["name", "device_id", "wake_action", "volume_entity"].includes(n))
+      if (!["name", "device_id", "wake_action", "volume_entity", "control_entity"].includes(n))
         throw new Error(`Unknown field "${s}.${n}"`);
     if (typeof t.name != "string" || !t.name)
       throw new Error(`"${s}.name" is required`);
     if (typeof t.device_id != "string" || !t.device_id)
       throw new Error(`"${s}.device_id" is required`);
     const r = { name: t.name, device_id: t.device_id };
-    if (t.wake_action !== void 0 && (r.wake_action = _i(`${s}.wake_action`, t.wake_action)), t.volume_entity !== void 0 && t.volume_entity !== null) {
-      const n = t.volume_entity;
-      if (typeof n != "string" || !/^media_player\.[a-z0-9_]+$/.test(n))
-        throw new Error(`"${s}.volume_entity" must be a media_player entity`);
-      r.volume_entity = n;
+    t.wake_action !== void 0 && (r.wake_action = fi(`${s}.wake_action`, t.wake_action));
+    for (const n of ["volume_entity", "control_entity"]) {
+      const o = t[n];
+      if (o != null) {
+        if (typeof o != "string" || !/^media_player\.[a-z0-9_]+$/.test(o))
+          throw new Error(`"${s}.${n}" must be a media_player entity`);
+        r[n] = o;
+      }
     }
     return r;
   });
@@ -1738,7 +1768,7 @@ function mi(e) {
 function mt(e) {
   if (!he(e)) throw new Error("Invalid configuration");
   for (const i of Object.keys(e))
-    if (!ui.includes(i)) throw new Error(`Unknown field "${i}"`);
+    if (!gi.includes(i)) throw new Error(`Unknown field "${i}"`);
   const t = {
     type: typeof e.type == "string" ? e.type : "custom:emby-library-card",
     ...Q,
@@ -1751,7 +1781,7 @@ function mt(e) {
   }
   if (e.start_view !== void 0 && (t.start_view = Ae("start_view", e.start_view, ut)), e.shelves !== void 0) {
     if (!Array.isArray(e.shelves)) throw new Error('"shelves" must be a list');
-    const i = e.shelves.map((s) => Ae("shelves", s, J));
+    const i = e.shelves.map((s) => Ae("shelves", s, X));
     if (new Set(i).size !== i.length)
       throw new Error('"shelves" cannot contain the same row twice');
     t.shelves = i;
@@ -1773,19 +1803,19 @@ function mt(e) {
       throw new Error('"default_target" must be a device_id');
     t.default_target = e.default_target;
   }
-  if (e.targets !== void 0 && e.targets !== null && (t.targets = mi(e.targets)), t.start_view === "search" && !t.show_search)
+  if (e.targets !== void 0 && e.targets !== null && (t.targets = yi(e.targets)), t.start_view === "search" && !t.show_search)
     throw new Error('"start_view: search" requires "show_search: true"');
   return t;
 }
-const gi = 200;
-function fi(e, t) {
-  const i = Number(e.height) || 0, s = e.shelves.filter((l) => J.includes(l)), r = s.length === J.length && s.every((l, h) => l === J[h]), n = {
+const vi = 200;
+function bi(e, t) {
+  const i = Number(e.height) || 0, s = e.shelves.filter((l) => X.includes(l)), r = s.length === X.length && s.every((l, h) => l === X[h]), n = {
     entry: e.entry || void 0,
     start_view: e.start_view === Q.start_view ? void 0 : e.start_view,
     shelves: r ? void 0 : s,
     shelf_limit: e.shelf_limit === Q.shelf_limit ? void 0 : e.shelf_limit,
     poster_size: e.poster_size === Q.poster_size ? void 0 : e.poster_size,
-    height: i <= 0 ? void 0 : Math.max(gi, Math.round(i)),
+    height: i <= 0 ? void 0 : Math.max(vi, Math.round(i)),
     show_now_playing: e.show_now_playing ? void 0 : !1,
     show_search: e.show_search ? void 0 : !1,
     default_target: e.default_target || void 0
@@ -1794,7 +1824,7 @@ function fi(e, t) {
     h !== void 0 && (o[l] = h);
   return o;
 }
-function yi(e) {
+function $i(e) {
   return {
     entry: e.entry,
     start_view: e.start_view,
@@ -1807,12 +1837,12 @@ function yi(e) {
     default_target: e.default_target ?? void 0
   };
 }
-var vi = Object.defineProperty, bi = Object.getOwnPropertyDescriptor, Z = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? bi(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+var wi = Object.defineProperty, xi = Object.getOwnPropertyDescriptor, Z = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? xi(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && vi(t, i, r), r;
+  return s && r && wi(t, i, r), r;
 };
-async function $i() {
+async function ki() {
   if (customElements.get("ha-form")) return;
   const e = window.loadCardHelpers;
   if (e)
@@ -1836,7 +1866,7 @@ let z = class extends E {
     return this._hass;
   }
   connectedCallback() {
-    super.connectedCallback(), this._formReady || $i().then(() => customElements.whenDefined("ha-form")).then(() => this._formReady = !0);
+    super.connectedCallback(), this._formReady || ki().then(() => customElements.whenDefined("ha-form")).then(() => this._formReady = !0);
   }
   /** Load the users and the clients that are online right now, once per entry. */
   async _loadChoices() {
@@ -1894,7 +1924,7 @@ let z = class extends E {
           select: {
             multiple: !0,
             reorder: !0,
-            options: J.map((s) => t(s, this._t(`shelf.${s}`)))
+            options: X.map((s) => t(s, this._t(`shelf.${s}`)))
           }
         }
       },
@@ -1930,7 +1960,7 @@ let z = class extends E {
   }
   _valueChanged(e) {
     e.stopPropagation();
-    const t = fi(e.detail.value, this._raw);
+    const t = bi(e.detail.value, this._raw);
     t.show_search === !1 && t.start_view === "search" && delete t.start_view, this.dispatchEvent(
       new CustomEvent("config-changed", { detail: { config: t }, bubbles: !0, composed: !0 })
     );
@@ -1940,7 +1970,7 @@ let z = class extends E {
     return !this._hass || !e || !this._formReady ? c : a`
       <ha-form
         .hass=${this._hass}
-        .data=${yi(e)}
+        .data=${$i(e)}
         .schema=${this._schema(e)}
         .computeLabel=${(t) => this._t(`editor.${t.name}`)}
         @value-changed=${this._valueChanged}
@@ -1949,7 +1979,7 @@ let z = class extends E {
     `;
   }
 };
-z.styles = M`
+z.styles = I`
     p {
       margin: 16px 0 0;
       color: var(--secondary-text-color);
@@ -1977,7 +2007,7 @@ Z([
 z = Z([
   D("emby-library-card-editor")
 ], z);
-const wi = {
+const Si = {
   emby_unreachable: "error.unreachable",
   emby_auth_failed: "error.auth",
   entry_required: "error.entry_required",
@@ -1988,7 +2018,7 @@ const wi = {
   not_controllable: "target.lost"
 };
 function ye(e, t) {
-  return A(e, wi[t] ?? "error.generic");
+  return A(e, Si[t] ?? "error.generic");
 }
 function ue(e, t, i) {
   const s = i !== void 0 && (t === "emby_unreachable" || t === "unknown");
@@ -2010,12 +2040,12 @@ function _e(e, t = "mdi:movie-open-outline") {
     </div>
   `;
 }
-var xi = Object.defineProperty, ki = Object.getOwnPropertyDescriptor, ne = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? ki(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+var Ei = Object.defineProperty, Ai = Object.getOwnPropertyDescriptor, ne = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? Ai(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && xi(t, i, r), r;
+  return s && r && Ei(t, i, r), r;
 };
-const Si = {
+const Ci = {
   Movie: "mdi:movie-outline",
   Series: "mdi:television-classic",
   Season: "mdi:television-classic",
@@ -2023,8 +2053,8 @@ const Si = {
   BoxSet: "mdi:filmstrip-box-multiple",
   Folder: "mdi:folder-outline",
   Video: "mdi:video-outline"
-}, gt = (e) => Si[e] ?? "mdi:video-outline";
-let H = class extends E {
+}, gt = (e) => Ci[e] ?? "mdi:video-outline";
+let K = class extends E {
   constructor() {
     super(...arguments), this.shape = "poster", this.language = "en", this._failed = !1;
   }
@@ -2032,7 +2062,7 @@ let H = class extends E {
     (e.has("item") || e.has("shape")) && (this._failed = !1);
   }
   render() {
-    const e = this.item, { title: t, subtitle: i } = this.caption ?? Jt(e), s = this._failed ? null : Xt(e, this.shape), r = e.progress > 0 && e.progress < 1, n = [t, i, e.played ? A(this.language, "detail.played") : ""].filter(Boolean).join(", ");
+    const e = this.item, { title: t, subtitle: i } = this.caption ?? Xt(e), s = this._failed ? null : Jt(e, this.shape), r = e.progress > 0 && e.progress < 1, n = [t, i, e.played ? A(this.language, "detail.played") : ""].filter(Boolean).join(", ");
     return a`
       <button class="tile" aria-label=${n} @click=${this._open}>
         <div class="image ${this.shape}">
@@ -2062,12 +2092,12 @@ let H = class extends E {
     this._failed = !0;
   }
   _open() {
-    T(this, "emby-open-item", { item: this.item });
+    O(this, "emby-open-item", { item: this.item });
   }
 };
-H.styles = [
+K.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
         min-width: 0;
@@ -2181,27 +2211,27 @@ H.styles = [
     `
 ];
 ne([
-  _({ attribute: !1 })
-], H.prototype, "item", 2);
+  m({ attribute: !1 })
+], K.prototype, "item", 2);
 ne([
-  _()
-], H.prototype, "shape", 2);
+  m()
+], K.prototype, "shape", 2);
 ne([
-  _()
-], H.prototype, "language", 2);
+  m()
+], K.prototype, "language", 2);
 ne([
-  _({ attribute: !1 })
-], H.prototype, "caption", 2);
+  m({ attribute: !1 })
+], K.prototype, "caption", 2);
 ne([
   d()
-], H.prototype, "_failed", 2);
-H = ne([
+], K.prototype, "_failed", 2);
+K = ne([
   D("emby-library-poster")
-], H);
-var Ei = Object.defineProperty, Ai = Object.getOwnPropertyDescriptor, S = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? Ai(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+], K);
+var Pi = Object.defineProperty, Oi = Object.getOwnPropertyDescriptor, S = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? Oi(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && Ei(t, i, r), r;
+  return s && r && Pi(t, i, r), r;
 };
 let w = class extends E {
   constructor() {
@@ -2235,8 +2265,8 @@ let w = class extends E {
       } else t.type === "Season" && t.series_id && await this._loadEpisodes(t.series_id, t.id, e);
     } catch (t) {
       if (e !== this._generation) return;
-      const i = O(t).code;
-      i === "not_found" ? T(this, "emby-error", { code: i }) : this._error = i;
+      const i = M(t).code;
+      i === "not_found" ? O(this, "emby-error", { code: i }) : this._error = i;
     }
   }
   async _loadEpisodes(e, t, i) {
@@ -2250,14 +2280,14 @@ let w = class extends E {
     try {
       await this._loadEpisodes(this._item.id, e, t);
     } catch (i) {
-      t === this._generation && (this._error = O(i).code);
+      t === this._generation && (this._error = M(i).code);
     }
   }
   _play(e) {
-    this._item && T(this, "emby-play", { itemId: this._item.id, mode: e });
+    this._item && O(this, "emby-play", { itemId: this._item.id, mode: e });
   }
   _open(e) {
-    T(this, "emby-open-item", { item: e });
+    O(this, "emby-open-item", { item: e });
   }
   render() {
     if (this._error !== null)
@@ -2436,7 +2466,7 @@ let w = class extends E {
 };
 w.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
         container-type: inline-size;
@@ -2678,16 +2708,16 @@ w.styles = [
     `
 ];
 S([
-  _({ attribute: !1 })
+  m({ attribute: !1 })
 ], w.prototype, "api", 2);
 S([
-  _()
+  m()
 ], w.prototype, "language", 2);
 S([
-  _()
+  m()
 ], w.prototype, "itemId", 2);
 S([
-  _({ type: Number })
+  m({ type: Number })
 ], w.prototype, "refreshKey", 2);
 S([
   d()
@@ -2722,12 +2752,12 @@ S([
 w = S([
   D("emby-library-detail")
 ], w);
-var Ci = Object.defineProperty, Pi = Object.getOwnPropertyDescriptor, me = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? Pi(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+var Mi = Object.defineProperty, Ti = Object.getOwnPropertyDescriptor, me = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? Ti(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && Ci(t, i, r), r;
+  return s && r && Mi(t, i, r), r;
 };
-const Oi = 8;
+const Ii = 8;
 let G = class extends E {
   constructor() {
     super(...arguments), this.heading = "", this.items = null, this.shape = "poster", this.language = "en";
@@ -2743,7 +2773,7 @@ let G = class extends E {
           @wheel=${this._onWheel}
         >
           ${this.items === null ? Array.from(
-      { length: Oi },
+      { length: Ii },
       () => a`<div class="cell" aria-hidden="true">
                   <div class="skeleton image"></div>
                   <div class="skeleton line"></div>
@@ -2774,7 +2804,7 @@ let G = class extends E {
 };
 G.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
       }
@@ -2818,26 +2848,26 @@ G.styles = [
     `
 ];
 me([
-  _()
+  m()
 ], G.prototype, "heading", 2);
 me([
-  _({ attribute: !1 })
+  m({ attribute: !1 })
 ], G.prototype, "items", 2);
 me([
-  _()
+  m()
 ], G.prototype, "shape", 2);
 me([
-  _()
+  m()
 ], G.prototype, "language", 2);
 G = me([
   D("emby-library-shelf")
 ], G);
-var Mi = Object.defineProperty, Ti = Object.getOwnPropertyDescriptor, V = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? Ti(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+var Ni = Object.defineProperty, Di = Object.getOwnPropertyDescriptor, V = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? Di(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && Mi(t, i, r), r;
+  return s && r && Ni(t, i, r), r;
 };
-const Ii = {
+const Ri = {
   resume: "shelf.resume",
   next_up: "shelf.next_up",
   latest: "shelf.latest",
@@ -2864,7 +2894,7 @@ let N = class extends E {
         const h = await this.api.shelf(o, this.limit);
         l = h.length > 0 ? h : "hidden";
       } catch (h) {
-        s += 1, r = O(h).code, l = "hidden";
+        s += 1, r = M(h).code, l = "hidden";
       }
       t === this._generation && (this._rows = { ...this._rows, [o]: l });
     });
@@ -2879,7 +2909,7 @@ let N = class extends E {
       ${e.map((t) => {
       const i = this._rows[t];
       return i === void 0 ? c : a`<emby-library-shelf
-          .heading=${A(this.language, Ii[t])}
+          .heading=${A(this.language, Ri[t])}
           .items=${i === "loading" ? null : i}
           .shape=${t === "resume" ? "still" : "poster"}
           .language=${this.language}
@@ -2890,7 +2920,7 @@ let N = class extends E {
 };
 N.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
         padding: 8px 0;
@@ -2901,19 +2931,19 @@ N.styles = [
     `
 ];
 V([
-  _({ attribute: !1 })
+  m({ attribute: !1 })
 ], N.prototype, "api", 2);
 V([
-  _()
+  m()
 ], N.prototype, "language", 2);
 V([
-  _({ attribute: !1 })
+  m({ attribute: !1 })
 ], N.prototype, "shelves", 2);
 V([
-  _({ type: Number })
+  m({ type: Number })
 ], N.prototype, "limit", 2);
 V([
-  _({ type: Number })
+  m({ type: Number })
 ], N.prototype, "refreshKey", 2);
 V([
   d()
@@ -2924,18 +2954,18 @@ V([
 N = V([
   D("emby-library-home")
 ], N);
-var Ni = Object.defineProperty, Di = Object.getOwnPropertyDescriptor, $ = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? Di(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+var zi = Object.defineProperty, ji = Object.getOwnPropertyDescriptor, $ = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? ji(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && Ni(t, i, r), r;
+  return s && r && zi(t, i, r), r;
 };
-const Ri = 60, Ce = 600, zi = 120, ji = 240, Li = [
+const Li = 60, Ce = 600, Ui = 120, Hi = 240, Ki = [
   "SortName",
   "DateCreated",
   "PremiereDate",
   "CommunityRating",
   "DatePlayed"
-], Ui = {
+], Vi = {
   movies: "mdi:movie-outline",
   tvshows: "mdi:television-classic",
   boxsets: "mdi:filmstrip-box-multiple",
@@ -2970,7 +3000,7 @@ let v = class extends E {
       const t = await this.api.views();
       e === this._generation && (this._views = t);
     } catch (t) {
-      e === this._generation && (this._error = O(t).code);
+      e === this._generation && (this._error = M(t).code);
     }
   }
   get _hasMore() {
@@ -2986,7 +3016,7 @@ let v = class extends E {
         sort_by: this._sortBy,
         sort_order: this._sortOrder,
         start_index: this._items.length,
-        limit: Ri,
+        limit: Li,
         filter: this._unplayed ? "unplayed" : void 0
       });
       if (e !== this._generation) return;
@@ -2994,7 +3024,7 @@ let v = class extends E {
         si(this._windowStart, this._items.length, Ce, this._columns())
       );
     } catch (t) {
-      e === this._generation && (this._error = O(t).code);
+      e === this._generation && (this._error = M(t).code);
     } finally {
       e === this._generation && (this._loading = !1);
     }
@@ -3022,17 +3052,17 @@ let v = class extends E {
       if (!t.isIntersecting) continue;
       const i = this._columns();
       if (t.target === this._bottom)
-        this._windowStart + Ce < this._items.length ? this._setWindow(this._windowStart + Math.ceil(zi / i) * i) : this._loadMore();
+        this._windowStart + Ce < this._items.length ? this._setWindow(this._windowStart + Math.ceil(Ui / i) * i) : this._loadMore();
       else if (t.target === this._spacerElement && this._windowStart > 0) {
         const s = this._rowHeight();
         if (s <= 0) continue;
-        const r = Math.max(0, t.intersectionRect.top - t.boundingClientRect.top), n = Math.ceil(ji / i), o = Math.floor(r / s) - n;
+        const r = Math.max(0, t.intersectionRect.top - t.boundingClientRect.top), n = Math.ceil(Hi / i), o = Math.floor(r / s) - n;
         this._setWindow(Math.min(Math.max(0, o * i), this._windowStart - i));
       }
     }
   }
   _openView(e) {
-    T(this, "emby-open-item", {
+    O(this, "emby-open-item", {
       item: { id: e.id, type: "Folder", name: e.name, is_folder: !0 }
     });
   }
@@ -3065,7 +3095,7 @@ let v = class extends E {
                       @error=${(t) => t.target.remove()}
                     />` : c}
                 <span class="view-label">
-                  <ha-icon icon=${Ui[e.collection_type]}></ha-icon>
+                  <ha-icon icon=${Vi[e.collection_type]}></ha-icon>
                   <span>${e.name}</span>
                 </span>
               </button>
@@ -3082,7 +3112,7 @@ let v = class extends E {
         <label class="sort">
           <span class="sr-only">${e("library.sort")}</span>
           <select @change=${this._setSort} .value=${this._sortBy}>
-            ${Li.map(
+            ${Ki.map(
       (r) => a`<option value=${r} ?selected=${r === this._sortBy}>
                   ${e(`sort.${r}`)}
                 </option>`
@@ -3139,7 +3169,7 @@ let v = class extends E {
 };
 v.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
         padding: 8px 16px 16px;
@@ -3230,16 +3260,16 @@ v.styles = [
     `
 ];
 $([
-  _({ attribute: !1 })
+  m({ attribute: !1 })
 ], v.prototype, "api", 2);
 $([
-  _()
+  m()
 ], v.prototype, "language", 2);
 $([
-  _({ attribute: !1 })
+  m({ attribute: !1 })
 ], v.prototype, "parent", 2);
 $([
-  _({ type: Number })
+  m({ type: Number })
 ], v.prototype, "refreshKey", 2);
 $([
   d()
@@ -3283,12 +3313,12 @@ $([
 v = $([
   D("emby-library-library")
 ], v);
-var Hi = Object.defineProperty, Ki = Object.getOwnPropertyDescriptor, R = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? Ki(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+var Bi = Object.defineProperty, Fi = Object.getOwnPropertyDescriptor, R = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? Fi(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && Hi(t, i, r), r;
+  return s && r && Bi(t, i, r), r;
 };
-const Vi = 300, Pe = 2;
+const qi = 300, Pe = 2;
 let C = class extends E {
   constructor() {
     super(...arguments), this.language = "en", this.refreshKey = 0, this._term = "", this._results = null, this._searched = "", this._loading = !1, this._error = null, this._sequence = 0;
@@ -3307,7 +3337,7 @@ let C = class extends E {
       this._results = null, this._loading = !1, this._error = null;
       return;
     }
-    this._loading = !0, this._timer = setTimeout(() => this._run(), Vi);
+    this._loading = !0, this._timer = setTimeout(() => this._run(), qi);
   }
   _run() {
     const e = this._term.trim();
@@ -3316,7 +3346,7 @@ let C = class extends E {
     this._loading = !0, this._error = null, this.api.search(e).then((i) => {
       t === this._sequence && (this._results = i, this._searched = e, this._loading = !1);
     }).catch((i) => {
-      t === this._sequence && (this._error = O(i).code, this._loading = !1);
+      t === this._sequence && (this._error = M(i).code, this._loading = !1);
     });
   }
   _clear() {
@@ -3389,7 +3419,7 @@ let C = class extends E {
 };
 C.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
         padding: 8px 16px 16px;
@@ -3453,13 +3483,13 @@ C.styles = [
     `
 ];
 R([
-  _({ attribute: !1 })
+  m({ attribute: !1 })
 ], C.prototype, "api", 2);
 R([
-  _()
+  m()
 ], C.prototype, "language", 2);
 R([
-  _({ type: Number })
+  m({ type: Number })
 ], C.prototype, "refreshKey", 2);
 R([
   d()
@@ -3482,12 +3512,12 @@ R([
 C = R([
   D("emby-library-search")
 ], C);
-var Bi = Object.defineProperty, Fi = Object.getOwnPropertyDescriptor, k = (e, t, i, s) => {
-  for (var r = s > 1 ? void 0 : s ? Fi(t, i) : t, n = e.length - 1, o; n >= 0; n--)
+var Wi = Object.defineProperty, Yi = Object.getOwnPropertyDescriptor, x = (e, t, i, s) => {
+  for (var r = s > 1 ? void 0 : s ? Yi(t, i) : t, n = e.length - 1, o; n >= 0; n--)
     (o = e[n]) && (r = (s ? o(t, i, r) : o(r)) || r);
-  return s && r && Bi(t, i, r), r;
+  return s && r && Wi(t, i, r), r;
 };
-const qi = "0.1.0", Wi = 6e4, Yi = 1e4, Gi = 6e3, Zi = {
+const Gi = "0.1.0", Zi = 6e4, Ji = 1e4, Xi = 6e3, Qi = {
   home: "mdi:home-outline",
   library: "mdi:filmstrip-box-multiple",
   search: "mdi:magnify"
@@ -3495,10 +3525,16 @@ const qi = "0.1.0", Wi = 6e4, Yi = 1e4, Gi = 6e3, Zi = {
   home: "nav.home",
   library: "nav.library",
   search: "nav.search"
+}, es = {
+  play: "media_play",
+  pause: "media_pause",
+  stop: "media_stop",
+  next: "media_next_track",
+  previous: "media_previous_track"
 };
 let b = class extends E {
   constructor() {
-    super(...arguments), this._lang = "en", this._entry = null, this._problem = null, this._tab = "home", this._stacks = { home: [], library: [], search: [] }, this._sessions = [], this._receivedAt = 0, this._available = !0, this._refreshKey = 0, this._picker = null, this._message = null, this._selectedDevice = null, this._volumes = {}, this._volumesKey = "{}", this._generation = 0, this._nextKey = 1, this._waiters = /* @__PURE__ */ new Set(), this._scroll = /* @__PURE__ */ new Map(), this._onReady = () => {
+    super(...arguments), this._lang = "en", this._entry = null, this._problem = null, this._tab = "home", this._stacks = { home: [], library: [], search: [] }, this._sessions = [], this._receivedAt = 0, this._available = !0, this._refreshKey = 0, this._picker = null, this._message = null, this._selectedDevice = null, this._volumes = {}, this._volumesKey = "{}", this._controls = {}, this._controlsKey = "{}", this._generation = 0, this._nextKey = 1, this._waiters = /* @__PURE__ */ new Set(), this._scroll = /* @__PURE__ */ new Map(), this._onReady = () => {
       this._problem !== null || this._api === void 0 ? this._init() : this._refreshKey += 1;
     }, this._onPlay = (e) => {
       e.stopPropagation(), this._requestPlay(e.detail);
@@ -3506,7 +3542,7 @@ let b = class extends E {
       e.stopPropagation();
       const { sessionId: t, command: i, value: s } = e.detail;
       this._api?.control(t, i, s).catch((r) => {
-        this._show(ye(this._lang, O(r).code));
+        this._show(ye(this._lang, M(r).code));
       });
     }, this._onVolume = (e) => {
       e.stopPropagation();
@@ -3523,6 +3559,10 @@ let b = class extends E {
         { is_volume_muted: r === !0 },
         { entity_id: i }
       )).catch(() => this._show(this._t("error.generic")));
+    }, this._onMedia = (e) => {
+      e.stopPropagation();
+      const t = this._hass, { entityId: i, command: s } = e.detail, r = es[s], n = this._config?.targets.some((o) => o.control_entity === i);
+      !t || !n || !r || t.callService("media_player", r, {}, { entity_id: i }).catch(() => this._show(this._t("error.generic")));
     }, this._onOpenItem = (e) => {
       e.stopPropagation();
       const { id: t, type: i, name: s } = e.detail.item, r = this._nextKey++;
@@ -3542,12 +3582,14 @@ let b = class extends E {
     const t = this._config, i = mt(e);
     this._config = i, (t === void 0 || t.start_view !== i.start_view) && this._showTab(i.start_view), !i.show_search && this._tab === "search" && this._showTab("home"), t !== void 0 && t.entry !== i.entry && this._init(), this._updateVolumes();
   }
-  /** Re-render only when the volume of a configured volume_entity changes. */
+  /** Re-render only when a configured volume_entity or control_entity changes. */
   _updateVolumes() {
     const e = this._config?.targets ?? [];
-    if (e.length === 0 && this._volumesKey === "{}") return;
+    if (e.length === 0 && this._volumesKey === "{}" && this._controlsKey === "{}") return;
     const t = oi(e, this._hass?.states), i = JSON.stringify(t);
     i !== this._volumesKey && (this._volumesKey = i, this._volumes = t);
+    const s = hi(e, this._hass?.states), r = JSON.stringify(s);
+    r !== this._controlsKey && (this._controlsKey = r, this._controls = s);
   }
   set hass(e) {
     const t = this._hass;
@@ -3567,10 +3609,10 @@ let b = class extends E {
   }
   // --- Lifecycle ----------------------------------------------------------
   connectedCallback() {
-    super.connectedCallback(), this.addEventListener("emby-open-item", this._onOpenItem), this.addEventListener("emby-play", this._onPlay), this.addEventListener("emby-control", this._onControl), this.addEventListener("emby-volume", this._onVolume), this.addEventListener("emby-error", this._onViewError), this._hass && (this._hass.connection.addEventListener("ready", this._onReady), this._init());
+    super.connectedCallback(), this.addEventListener("emby-open-item", this._onOpenItem), this.addEventListener("emby-play", this._onPlay), this.addEventListener("emby-control", this._onControl), this.addEventListener("emby-volume", this._onVolume), this.addEventListener("emby-media", this._onMedia), this.addEventListener("emby-error", this._onViewError), this._hass && (this._hass.connection.addEventListener("ready", this._onReady), this._init());
   }
   disconnectedCallback() {
-    super.disconnectedCallback(), this.removeEventListener("emby-open-item", this._onOpenItem), this.removeEventListener("emby-play", this._onPlay), this.removeEventListener("emby-control", this._onControl), this.removeEventListener("emby-volume", this._onVolume), this.removeEventListener("emby-error", this._onViewError), this._hass?.connection.removeEventListener("ready", this._onReady), this._generation += 1, this._stopSessions(), clearTimeout(this._messageTimer), clearTimeout(this._refreshTimer), this._waiters.clear();
+    super.disconnectedCallback(), this.removeEventListener("emby-open-item", this._onOpenItem), this.removeEventListener("emby-play", this._onPlay), this.removeEventListener("emby-control", this._onControl), this.removeEventListener("emby-volume", this._onVolume), this.removeEventListener("emby-media", this._onMedia), this.removeEventListener("emby-error", this._onViewError), this._hass?.connection.removeEventListener("ready", this._onReady), this._generation += 1, this._stopSessions(), clearTimeout(this._messageTimer), clearTimeout(this._refreshTimer), this._waiters.clear();
   }
   _stopSessions() {
     this._unsubscribe?.(), this._unsubscribe = void 0;
@@ -3601,7 +3643,7 @@ let b = class extends E {
       const h = await l.subscribeSessions((u) => this._onSessions(u));
       i !== this._generation ? h() : this._unsubscribe = h;
     } catch (h) {
-      i === this._generation && (this._problem = O(h).code);
+      i === this._generation && (this._problem = M(h).code);
     }
   }
   // --- Sessions -----------------------------------------------------------
@@ -3673,7 +3715,7 @@ let b = class extends E {
     try {
       r = await i.play(e.session_id, t.itemId, t.mode);
     } catch (o) {
-      const l = O(o).code;
+      const l = M(o).code;
       this._show(ye(this._lang, l)), (l === "session_not_found" || l === "not_controllable") && (this._picker = { pending: t });
       return;
     }
@@ -3681,7 +3723,7 @@ let b = class extends E {
       (o) => o.find(
         (l) => l.session_id === e.session_id && l.now_playing?.id === r
       ) ?? null,
-      Yi
+      Ji
     ) ? this._show(null) : this._show(this._t("target.not_started"));
   }
   async _wakeAndPlay(e, t) {
@@ -3697,7 +3739,7 @@ let b = class extends E {
     }
     const o = await this._waitFor(
       (l) => st(e.device_id, l),
-      Wi
+      Zi
     );
     if (!o) {
       this._show(this._t("target.no_response"));
@@ -3764,13 +3806,13 @@ let b = class extends E {
     return A(this._lang, e, t);
   }
   _show(e, t = !1) {
-    clearTimeout(this._messageTimer), this._message = e, e !== null && !t && (this._messageTimer = setTimeout(() => this._message = null, Gi));
+    clearTimeout(this._messageTimer), this._message = e, e !== null && !t && (this._messageTimer = setTimeout(() => this._message = null, Xi));
   }
   // --- Rendering ----------------------------------------------------------------
   render() {
     const e = this._config;
     if (!e) return c;
-    const t = typeof e.height == "number", i = `--el-poster-width:${di[e.poster_size]}px;${t ? `height:${e.height}px;` : ""}`;
+    const t = typeof e.height == "number", i = `--el-poster-width:${_i[e.poster_size]}px;${t ? `height:${e.height}px;` : ""}`;
     if (this._problem !== null)
       return a`<ha-card style=${i}>${this._renderProblem(this._problem)}</ha-card>`;
     const s = this._api;
@@ -3800,6 +3842,7 @@ let b = class extends E {
               .language=${this._lang}
               .sessions=${this._sessions}
               .volumes=${this._volumes}
+              .controls=${this._controls}
               .receivedAt=${this._receivedAt}
             ></emby-library-now-playing>` : c}
         ${this._picker !== null ? a`<emby-library-target-picker
@@ -3827,7 +3870,7 @@ let b = class extends E {
                 aria-current=${r === this._tab ? "page" : "false"}
                 @click=${() => this._onTab(r)}
               >
-                <ha-icon icon=${Zi[r]}></ha-icon>
+                <ha-icon icon=${Qi[r]}></ha-icon>
                 <span class="tab-label">${this._t(nt[r])}</span>
               </button>`
     )}
@@ -3921,7 +3964,7 @@ let b = class extends E {
 };
 b.styles = [
   j,
-  M`
+  I`
       :host {
         display: block;
         container-type: inline-size;
@@ -4074,52 +4117,55 @@ b.styles = [
       }
     `
 ];
-k([
+x([
   d()
 ], b.prototype, "_config", 2);
-k([
+x([
   d()
 ], b.prototype, "_lang", 2);
-k([
+x([
   d()
 ], b.prototype, "_api", 2);
-k([
+x([
   d()
 ], b.prototype, "_entry", 2);
-k([
+x([
   d()
 ], b.prototype, "_problem", 2);
-k([
+x([
   d()
 ], b.prototype, "_tab", 2);
-k([
+x([
   d()
 ], b.prototype, "_stacks", 2);
-k([
+x([
   d()
 ], b.prototype, "_sessions", 2);
-k([
+x([
   d()
 ], b.prototype, "_receivedAt", 2);
-k([
+x([
   d()
 ], b.prototype, "_available", 2);
-k([
+x([
   d()
 ], b.prototype, "_refreshKey", 2);
-k([
+x([
   d()
 ], b.prototype, "_picker", 2);
-k([
+x([
   d()
 ], b.prototype, "_message", 2);
-k([
+x([
   d()
 ], b.prototype, "_selectedDevice", 2);
-k([
+x([
   d()
 ], b.prototype, "_volumes", 2);
-b = k([
+x([
+  d()
+], b.prototype, "_controls", 2);
+b = x([
   D("emby-library-card")
 ], b);
 window.customCards = window.customCards ?? [];
@@ -4129,8 +4175,8 @@ window.customCards.some((e) => e.type === "emby-library-card") || window.customC
   description: "Browse, search and play your Emby movies and series.",
   preview: !1
 });
-console.info(`%c EMBY-LIBRARY-CARD %c ${qi} `, "font-weight:700", "");
+console.info(`%c EMBY-LIBRARY-CARD %c ${Gi} `, "font-weight:700", "");
 export {
-  qi as CARD_VERSION,
+  Gi as CARD_VERSION,
   b as EmbyLibraryCard
 };

@@ -9,6 +9,7 @@ import { POSTER_WIDTHS, validateConfig } from "./config";
 import "./editor";
 import type {
   ControlDetail,
+  MediaDetail,
   OpenItemDetail,
   PlayDetail,
   TargetChoice,
@@ -19,8 +20,10 @@ import { errorText } from "./state-templates";
 import { sharedStyles } from "./styles";
 import type {
   CardConfig,
+  ControlCommand,
   Entry,
   ErrorCode,
+  ExternalControl,
   ExternalVolume,
   HomeAssistant,
   Session,
@@ -28,7 +31,13 @@ import type {
   StartView,
   TargetConfig,
 } from "./types";
-import { chooseDevice, externalVolumes, sessionForDevice, targetStorageKey } from "./util";
+import {
+  chooseDevice,
+  externalControls,
+  externalVolumes,
+  sessionForDevice,
+  targetStorageKey,
+} from "./util";
 import "./views/detail";
 import "./views/home";
 import "./views/library";
@@ -65,6 +74,15 @@ const TAB_LABELS: Record<Tab, TranslationKey> = {
   home: "nav.home",
   library: "nav.library",
   search: "nav.search",
+};
+
+/** The media_player action behind each command a control_entity can take. */
+const MEDIA_SERVICES: Partial<Record<ControlCommand, string>> = {
+  play: "media_play",
+  pause: "media_pause",
+  stop: "media_stop",
+  next: "media_next_track",
+  previous: "media_previous_track",
 };
 
 @customElement("emby-library-card")
@@ -109,6 +127,10 @@ export class EmbyLibraryCard extends LitElement {
 
   private _volumesKey = "{}";
 
+  @state() private _controls: Record<string, ExternalControl> = {};
+
+  private _controlsKey = "{}";
+
   private _hass?: HomeAssistant;
 
   private _unsubscribe?: () => void;
@@ -145,15 +167,21 @@ export class EmbyLibraryCard extends LitElement {
     this._updateVolumes();
   }
 
-  /** Re-render only when the volume of a configured volume_entity changes. */
+  /** Re-render only when a configured volume_entity or control_entity changes. */
   private _updateVolumes(): void {
     const targets = this._config?.targets ?? [];
-    if (targets.length === 0 && this._volumesKey === "{}") return;
+    if (targets.length === 0 && this._volumesKey === "{}" && this._controlsKey === "{}") return;
     const volumes = externalVolumes(targets, this._hass?.states);
     const key = JSON.stringify(volumes);
     if (key !== this._volumesKey) {
       this._volumesKey = key;
       this._volumes = volumes;
+    }
+    const controls = externalControls(targets, this._hass?.states);
+    const controlsKey = JSON.stringify(controls);
+    if (controlsKey !== this._controlsKey) {
+      this._controlsKey = controlsKey;
+      this._controls = controls;
     }
   }
 
@@ -193,6 +221,7 @@ export class EmbyLibraryCard extends LitElement {
     this.addEventListener("emby-play", this._onPlay as EventListener);
     this.addEventListener("emby-control", this._onControl as EventListener);
     this.addEventListener("emby-volume", this._onVolume as EventListener);
+    this.addEventListener("emby-media", this._onMedia as EventListener);
     this.addEventListener("emby-error", this._onViewError as EventListener);
     if (this._hass) {
       this._hass.connection.addEventListener("ready", this._onReady);
@@ -206,6 +235,7 @@ export class EmbyLibraryCard extends LitElement {
     this.removeEventListener("emby-play", this._onPlay as EventListener);
     this.removeEventListener("emby-control", this._onControl as EventListener);
     this.removeEventListener("emby-volume", this._onVolume as EventListener);
+    this.removeEventListener("emby-media", this._onMedia as EventListener);
     this.removeEventListener("emby-error", this._onViewError as EventListener);
     this._hass?.connection.removeEventListener("ready", this._onReady);
     this._generation += 1;
@@ -472,6 +502,20 @@ export class EmbyLibraryCard extends LitElement {
     call.catch(() => this._show(this._t("error.generic")));
   };
 
+  /** Play, pause and stop through a Home Assistant media_player, as the logged-in user. */
+  private readonly _onMedia = (event: CustomEvent<MediaDetail>): void => {
+    event.stopPropagation();
+    const hass = this._hass;
+    const { entityId, command } = event.detail;
+    const service = MEDIA_SERVICES[command];
+    // Only entities named in this card's own configuration can be controlled.
+    const allowed = this._config?.targets.some((target) => target.control_entity === entityId);
+    if (!hass || !allowed || !service) return;
+    hass
+      .callService("media_player", service, {}, { entity_id: entityId })
+      .catch(() => this._show(this._t("error.generic")));
+  };
+
   // --- Navigation -----------------------------------------------------------
 
   private get _stack(): Level[] {
@@ -639,6 +683,7 @@ export class EmbyLibraryCard extends LitElement {
               .language=${this._lang}
               .sessions=${this._sessions}
               .volumes=${this._volumes}
+              .controls=${this._controls}
               .receivedAt=${this._receivedAt}
             ></emby-library-now-playing>`
           : nothing}

@@ -5,6 +5,7 @@ import {
   chooseDevice,
   episodeCode,
   episodeLabel,
+  externalControls,
   externalVolumes,
   formatClock,
   formatRuntime,
@@ -283,5 +284,66 @@ describe("externalVolumes", () => {
     expect(of("loud")).toBeNull();
     expect(of(1.4)).toBe(100);
     expect(of(-1)).toBe(0);
+  });
+});
+
+describe("externalControls", () => {
+  const targets: TargetConfig[] = [
+    { name: "TV", device_id: "tv", control_entity: "media_player.tv" },
+    { name: "Bedroom", device_id: "bedroom" },
+  ];
+  const entity = (state: string, attributes: Record<string, unknown>) => ({ state, attributes });
+  const PLAY_PAUSE_STOP = 16384 | 1 | 4096;
+
+  it("lists the commands the entity supports, keyed by device_id", () => {
+    const controls = externalControls(targets, {
+      "media_player.tv": entity("on", {
+        supported_features: PLAY_PAUSE_STOP | 4 | 8,
+        app_id: "tv.emby.embyatv.startup.StartupActivity-tv.emby.embyatv",
+        app_name: "Emby",
+      }),
+      "media_player.bedroom": entity("on", { supported_features: PLAY_PAUSE_STOP }),
+    });
+    expect(controls).toEqual({
+      tv: { entityId: "media_player.tv", commands: ["pause", "stop", "play"] },
+    });
+  });
+
+  it("includes next and previous when the entity has them", () => {
+    const controls = externalControls(targets, {
+      "media_player.tv": entity("on", { supported_features: PLAY_PAUSE_STOP | 16 | 32 }),
+    });
+    expect(controls.tv?.commands).toEqual(["pause", "previous", "next", "stop", "play"]);
+  });
+
+  it("takes no commands while another app than Emby is in front", () => {
+    const controls = externalControls(targets, {
+      "media_player.tv": entity("on", {
+        supported_features: PLAY_PAUSE_STOP,
+        app_id: "com.netflix.ninja",
+        app_name: "Netflix",
+      }),
+    });
+    expect(controls).toEqual({ tv: { entityId: "media_player.tv", commands: [] } });
+  });
+
+  it("recognises Emby from the app name alone", () => {
+    const controls = externalControls(targets, {
+      "media_player.tv": entity("idle", { supported_features: 1, app_name: "Emby" }),
+    });
+    expect(controls.tv?.commands).toEqual(["pause"]);
+  });
+
+  it("leaves out entities that are missing, unavailable or without playback features", () => {
+    expect(externalControls(targets, undefined)).toEqual({});
+    expect(externalControls(targets, {})).toEqual({});
+    expect(
+      externalControls(targets, {
+        "media_player.tv": entity("unavailable", { supported_features: PLAY_PAUSE_STOP }),
+      }),
+    ).toEqual({});
+    expect(
+      externalControls(targets, { "media_player.tv": entity("on", { supported_features: 12 }) }),
+    ).toEqual({});
   });
 });

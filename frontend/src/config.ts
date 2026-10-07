@@ -69,7 +69,7 @@ function validateTargets(value: unknown): TargetConfig[] {
     const prefix = `targets[${index}]`;
     if (!isObject(raw)) throw new Error(`"${prefix}" must be a mapping`);
     for (const key of Object.keys(raw)) {
-      if (!["name", "device_id", "wake_action", "volume_entity"].includes(key)) {
+      if (!["name", "device_id", "wake_action", "volume_entity", "control_entity"].includes(key)) {
         throw new Error(`Unknown field "${prefix}.${key}"`);
       }
     }
@@ -83,12 +83,13 @@ function validateTargets(value: unknown): TargetConfig[] {
     if (raw.wake_action !== undefined) {
       target.wake_action = validateWakeAction(`${prefix}.wake_action`, raw.wake_action);
     }
-    if (raw.volume_entity !== undefined && raw.volume_entity !== null) {
-      const entity = raw.volume_entity;
+    for (const field of ["volume_entity", "control_entity"] as const) {
+      const entity = raw[field];
+      if (entity === undefined || entity === null) continue;
       if (typeof entity !== "string" || !/^media_player\.[a-z0-9_]+$/.test(entity)) {
-        throw new Error(`"${prefix}.volume_entity" must be a media_player entity`);
+        throw new Error(`"${prefix}.${field}" must be a media_player entity`);
       }
-      target.volume_entity = entity;
+      target[field] = entity;
     }
     return target;
   });

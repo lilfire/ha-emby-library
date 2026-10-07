@@ -18,6 +18,11 @@ export interface VolumeDetail {
   level?: number;
   muted?: boolean;
 }
+/** Playback command for a client that is controlled through a media_player. */
+export interface MediaDetail {
+  entityId: string;
+  command: ControlCommand;
+}
 export type TargetChoice =
   | { kind: "session"; session: Session }
   | { kind: "target"; target: TargetConfig };
@@ -28,6 +33,7 @@ declare global {
     "emby-play": CustomEvent<PlayDetail>;
     "emby-control": CustomEvent<ControlDetail>;
     "emby-volume": CustomEvent<VolumeDetail>;
+    "emby-media": CustomEvent<MediaDetail>;
     "emby-target-chosen": CustomEvent<TargetChoice>;
     "emby-pick-target": CustomEvent<void>;
     "emby-close": CustomEvent<void>;
