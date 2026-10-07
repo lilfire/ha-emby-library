@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
+import logging
 import time
 from typing import Any, cast
 
@@ -16,6 +17,8 @@ import aiohttp
 from .const import LIST_PARAMS, REQUEST_TIMEOUT, VIEWS_CACHE_SECONDS
 
 type JsonDict = dict[str, Any]
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class EmbyError(Exception):
@@ -108,6 +111,8 @@ class EmbyClient:
                 headers=self._headers,
                 timeout=self._timeout,
             ) as resp:
+                if method != "GET":
+                    _LOGGER.debug("%s %s -> HTTP %s", method, path, resp.status)
                 self._raise_for_status(resp.status, path)
                 if resp.status == 204 or method != "GET":
                     await resp.read()
@@ -288,7 +293,6 @@ class EmbyClient:
             "POST",
             f"/Sessions/{session_id}/Playing/{command}",
             params=params,
-            json={"ControllingUserId": self._uid},
         )
 
     # E15, general

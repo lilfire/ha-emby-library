@@ -538,6 +538,8 @@ async def test_control_playstate(
     assert await ok(ws, "control", session_id="sess-web", command=command) == {}
     request = calls(emby, "POST", f"/Sessions/sess-web/Playing/{emby_command}")[0]
     assert "SeekPositionTicks" not in request.kwargs["params"]
+    # The documented form has no request body.
+    assert request.kwargs.get("json") is None
 
 
 async def test_control_seek_and_volume(
