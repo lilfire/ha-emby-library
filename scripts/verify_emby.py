@@ -202,11 +202,11 @@ def check_v3(emby: Emby, uid: str, sessions: list[dict[str, Any]], play: bool) -
                 break
         if not started:
             return Result("V3", assumption, FAIL, "accepted, but the client did not start")
-        emby.request("POST", f"/Sessions/{sid}/Playing/Pause", None, {"ControllingUserId": uid})
+        emby.request("POST", f"/Sessions/{sid}/Playing/Pause")
         time.sleep(2)
         current = next((s for s in items_of(emby.get("/Sessions")) if s.get("Id") == sid), {})
         paused = bool((current.get("PlayState") or {}).get("IsPaused"))
-        emby.request("POST", f"/Sessions/{sid}/Playing/Stop", None, {"ControllingUserId": uid})
+        emby.request("POST", f"/Sessions/{sid}/Playing/Stop")
     except (HTTPError, URLError, ValueError, KeyError) as err:
         return Result("V3", assumption, FAIL, describe(err))
     client = f"{target.get('Client')} on {target.get('DeviceName')}"
