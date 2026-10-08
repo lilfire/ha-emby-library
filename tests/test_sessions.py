@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
 from custom_components.emby_library.const import DOMAIN
+from custom_components.emby_library.sessions import SessionHub
 
 from .conftest import calls, url
 
@@ -121,6 +122,36 @@ async def test_events_only_on_change(
         await asyncio.wait_for(ws.receive_json(), 0.1)
 
 
+async def test_remembers_only_video_clients_across_disconnect_and_restart(
+    hass: HomeAssistant,
+    loaded_entry: MockConfigEntry,
+    emby: aioresponses,
+    raw_sessions: list[dict[str, Any]],
+) -> None:
+    """Offline discovery survives restart without reviving a stale playable session."""
+    hub = loaded_entry.runtime_data.hub
+    emby.get(url(SESSIONS), payload=raw_sessions)
+    await hub._poll_once()
+    clients = hub._last_event["clients"]
+    assert {c["device_id"] for c in clients} == {"dev-tv", "dev-web"}
+    # Write the delayed-save data now to simulate a completed save before restart.
+    await hub._store.async_save(clients)
+
+    emby.get(url(SESSIONS), payload=[])
+    await hub._poll_once()
+    assert hub._last_event["sessions"] == []
+    assert hub._last_event["clients"] == clients
+    hub.stop()
+
+    restored = SessionHub(hass, loaded_entry, hub._client, hub._signer)
+    await restored.async_load_clients()
+    emby.get(url(SESSIONS), payload=[])
+    await restored._poll_once()
+    assert restored._last_event["clients"] == clients
+    emby.get(url(SESSIONS), payload=[])
+    assert await restored.async_find_session("sess-tv") is None
+
+
 async def test_unavailable_and_recovery(
     hass: HomeAssistant,
     hass_ws_client: WebSocketGenerator,
@@ -137,7 +168,10 @@ async def test_unavailable_and_recovery(
     ws = await hass_ws_client(hass)
     await subscribe(ws)
     assert (await next_event(ws))["available"] is True
-    assert await next_event(ws) == {"available": False, "sessions": []}
+    offline = await next_event(ws)
+    assert offline["available"] is False
+    assert offline["sessions"] == []
+    assert {c["device_id"] for c in offline["clients"]} == {"dev-tv", "dev-web"}
     assert (await next_event(ws))["available"] is True
 
 
@@ -151,7 +185,7 @@ async def test_auth_failure_starts_reauth(
     emby.get(url(SESSIONS), status=401, repeat=True)
     ws = await hass_ws_client(hass)
     await subscribe(ws)
-    assert await next_event(ws) == {"available": False, "sessions": []}
+    assert await next_event(ws) == {"available": False, "sessions": [], "clients": []}
     await hass.async_block_till_done()
     assert hass.config_entries.flow.async_progress_by_handler(DOMAIN)
 

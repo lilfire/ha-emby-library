@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CONFIG, configToForm, formToConfig, validateConfig } from "../src/config";
+import {
+  DEFAULT_CONFIG, configToForm, formToConfig, validateConfig,
+  targetToForm, targetFormsToConfig,
+} from "../src/config";
 
 const TYPE = "custom:emby-library-card";
 
@@ -137,6 +140,58 @@ describe("validateConfig", () => {
 });
 
 describe("editor mapping", () => {
+  it("round-trips a per-card selection, including selecting no clients", () => {
+    for (const ids of [["living_room"], ["bedroom", "living_room", "office"], []]) {
+      const base = { type: TYPE, allowed_targets: ids };
+      const form = configToForm(validateConfig(base));
+      expect(form.all_clients).toBe(false);
+      expect(formToConfig(form, base)).toEqual(base);
+      expect(formToConfig({ ...form, all_clients: true }, base)).toEqual({ type: TYPE });
+    }
+  });
+
+  it("rejects malformed client selections", () => {
+    for (const allowed_targets of ["tv", [""], [12], ["   "]]) {
+      expect(() => validateConfig({ type: TYPE, allowed_targets })).toThrow("allowed_targets");
+    }
+    expect(validateConfig({ type: TYPE, allowed_targets: ["tv", "tv"] }).allowed_targets).toEqual(["tv"]);
+  });
+
+  it("round-trips client settings including arbitrary wake targets and data", () => {
+    const targets = validateConfig({
+      type: TYPE,
+      targets: [{
+        name: "TV", device_id: "tv",
+        volume_entity: "media_player.receiver", control_entity: "media_player.tv",
+        wake_action: {
+          service: "script.turn_on",
+          target: { entity_id: ["script.wake_tv"], area_id: "living_room" },
+          data: { variables: { input: "HDMI 1" } },
+        },
+      }],
+    }).targets;
+    expect(targetFormsToConfig(targets.map(targetToForm))).toEqual(targets);
+  });
+
+  it("clears optional client settings without leaving invalid empty values", () => {
+    const form = targetToForm({
+      name: "TV", device_id: "tv", volume_entity: "media_player.tv",
+      wake_action: { action: "script.turn_on", target: { entity_id: "script.wake_tv" } },
+    });
+    expect(targetFormsToConfig([{
+      ...form, volume_entity: "", control_entity: "", wake_action: "",
+    }])).toEqual([{ name: "TV", device_id: "tv" }]);
+    expect(targetFormsToConfig([])).toEqual([]);
+  });
+
+  it("rejects incomplete clients and malformed wake actions before updating the preview", () => {
+    expect(() => targetFormsToConfig([{}])).toThrow("name");
+    expect(() => targetFormsToConfig([{ name: "TV" }])).toThrow("device_id");
+    expect(() => targetFormsToConfig([{
+      name: "TV", device_id: "tv", wake_action: "turn on",
+    }])).toThrow("action");
+  });
+
   it("round-trips the defaults to a minimal configuration", () => {
     const form = configToForm(validateConfig({ type: TYPE }));
     expect(form.height).toBe(0);

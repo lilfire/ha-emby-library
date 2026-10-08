@@ -7,17 +7,50 @@ import {
   episodeLabel,
   externalControls,
   externalVolumes,
+  filterCardClients,
   formatClock,
   formatRuntime,
   fraction,
   groupSearch,
   interpolatePosition,
+  mergeClientTargets,
   pickImage,
   sessionForDevice,
   targetStorageKey,
   tileCaption,
   tileWindow,
 } from "../src/util";
+
+describe("remembered video clients", () => {
+  it("isolates cards, ignores a stored choice from another card, and keeps selected offline targets", () => {
+    const sessions = [session({ device_id: "living_room" }), session({ device_id: "bedroom" })];
+    const targets: TargetConfig[] = [{
+      name: "Office", device_id: "office", wake_action: { action: "script.wake_office" },
+    }];
+    const livingRoom = filterCardClients(sessions, ["living_room"]);
+    const bedroom = filterCardClients(sessions, ["bedroom"]);
+    expect(livingRoom.map((s) => s.device_id)).toEqual(["living_room"]);
+    expect(bedroom.map((s) => s.device_id)).toEqual(["bedroom"]);
+    expect(chooseDevice("bedroom", null, livingRoom, [])).toBe("living_room");
+    expect(filterCardClients(targets, ["office"])).toEqual(targets);
+    expect(filterCardClients(targets, ["living_room"])).toEqual([]);
+    expect(filterCardClients(sessions, [])).toEqual([]);
+    expect(filterCardClients(sessions, null)).toEqual(sessions);
+  });
+
+  it("keeps offline clients and preserves configured wake actions without duplicates", () => {
+    const target: TargetConfig = {
+      name: "Living room", device_id: "tv",
+      wake_action: { action: "script.turn_on", target: { entity_id: "script.wake_tv" } },
+    };
+    expect(mergeClientTargets([
+      { name: "TV", device_id: "tv", client: "AndroidTV" },
+      { name: "Bedroom", device_id: "bedroom", client: "Emby" },
+    ], [target])).toEqual([target, { name: "Bedroom", device_id: "bedroom" }]);
+    expect(chooseDevice("tv", null, [], [target])).toBe("tv");
+    expect(sessionForDevice("tv", [])).toBeNull();
+  });
+});
 
 export function item(overrides: Partial<Item> = {}): Item {
   return {

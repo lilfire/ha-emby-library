@@ -6,6 +6,7 @@ import type {
   ExternalVolume,
   HassEntity,
   Item,
+  KnownClient,
   Session,
   TargetConfig,
 } from "./types";
@@ -84,6 +85,24 @@ export function fraction(position: number | null, duration: number | null): numb
 
 export const targetStorageKey = (entryId: string): string =>
   `emby-library-card:target:${entryId}`;
+
+/** Configured names and wake actions take precedence over discovery. */
+export function mergeClientTargets(
+  clients: readonly KnownClient[], targets: readonly TargetConfig[],
+): TargetConfig[] {
+  const merged = new Map(clients.map((client) => [client.device_id, {
+    name: client.name, device_id: client.device_id,
+  } as TargetConfig]));
+  for (const target of targets) merged.set(target.device_id, target);
+  return [...merged.values()];
+}
+
+/** Apply a card's client selection equally to live sessions and offline targets. */
+export function filterCardClients<T extends { device_id: string }>(
+  clients: readonly T[], allowed: readonly string[] | null,
+): T[] {
+  return clients.filter((client) => allowed === null || allowed.includes(client.device_id));
+}
 
 /**
  * Preselected device: stored choice, then default_target, then the only

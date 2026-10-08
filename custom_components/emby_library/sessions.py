@@ -9,8 +9,10 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.helpers.storage import Store
 
 from .const import (
+    DOMAIN,
     POLL_INTERVAL_IDLE,
     POLL_INTERVAL_PLAYING,
     POLL_INTERVAL_UNAVAILABLE,
@@ -42,6 +44,13 @@ class SessionHub:
         self._listeners: set[SessionsListener] = set()
         self._task: asyncio.Task[None] | None = None
         self._last_event: JsonDict | None = None
+        self._clients: dict[str, JsonDict] = {}
+        self._store: Store[list[JsonDict]] = Store(hass, 1, f"{DOMAIN}.clients.{entry.entry_id}")
+
+    async def async_load_clients(self) -> None:
+        """Restore previously observed video clients, not stale sessions."""
+        clients = await self._store.async_load()
+        self._clients = {client["device_id"]: client for client in clients or []}
 
     @property
     def is_polling(self) -> bool:
@@ -89,7 +98,23 @@ class SessionHub:
     async def async_fetch(self) -> list[JsonDict]:
         """Fetch and normalize the session list once."""
         raw = await self._client.sessions()
-        return normalize_sessions(raw, self._entry.entry_id, self._signer)
+        sessions = normalize_sessions(raw, self._entry.entry_id, self._signer)
+        changed = False
+        for session in sessions:
+            device_id = session["device_id"]
+            if not session["controllable"] or not device_id:
+                continue
+            client = {
+                "device_id": device_id,
+                "name": session["device_name"],
+                "client": session["client"],
+            }
+            if self._clients.get(device_id) != client:
+                self._clients[device_id] = client
+                changed = True
+        if changed:
+            self._store.async_delay_save(lambda: list(self._clients.values()), 1)
+        return sessions
 
     async def async_find_session(self, session_id: str) -> JsonDict | None:
         """Find a session in the latest list, refreshing once if it is missing."""
@@ -116,6 +141,8 @@ class SessionHub:
             event = {"available": True, "sessions": sessions}
             playing = any(s["now_playing"] is not None for s in sessions)
             interval = POLL_INTERVAL_PLAYING if playing else POLL_INTERVAL_IDLE
+
+        event["clients"] = list(self._clients.values())
 
         if event != self._last_event:
             self._last_event = event

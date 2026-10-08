@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
@@ -155,11 +156,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: EmbyLibraryConfigEntry) 
         hub=SessionHub(hass, entry, client, signer),
         server_version=str(info.get("Version", "")),
     )
+    await entry.runtime_data.hub.async_load_clients()
     return True
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: EmbyLibraryConfigEntry) -> None:
     """Remove the card resource together with the last Emby user."""
+    await Store(hass, 1, f"{DOMAIN}.clients.{entry.entry_id}").async_remove()
     if not hass.config_entries.async_entries(DOMAIN):
         await _async_unregister_card(hass)
 

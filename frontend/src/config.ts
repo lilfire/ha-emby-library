@@ -23,6 +23,7 @@ export const DEFAULT_CONFIG: Omit<CardConfig, "type"> = {
   poster_size: "medium",
   height: "auto",
   default_target: null,
+  allowed_targets: null,
   targets: [],
 };
 
@@ -156,6 +157,14 @@ export function validateConfig(raw: unknown): CardConfig {
   if (raw.targets !== undefined && raw.targets !== null) {
     config.targets = validateTargets(raw.targets);
   }
+  if (raw.allowed_targets !== undefined && raw.allowed_targets !== null) {
+    if (!Array.isArray(raw.allowed_targets) || raw.allowed_targets.some(
+      (id: unknown) => typeof id !== "string" || !id.trim(),
+    )) {
+      throw new Error('"allowed_targets" must be a list of Emby device IDs');
+    }
+    config.allowed_targets = [...new Set(raw.allowed_targets as string[])];
+  }
   if (config.start_view === "search" && !config.show_search) {
     throw new Error('"start_view: search" requires "show_search: true"');
   }
@@ -163,6 +172,45 @@ export function validateConfig(raw: unknown): CardConfig {
 }
 
 // --- Visual editor ---------------------------------------------------------
+
+export interface TargetFormData {
+  name?: string;
+  device_id?: string;
+  volume_entity?: string;
+  control_entity?: string;
+  wake_action?: string;
+  wake_target?: Record<string, unknown>;
+  wake_data?: Record<string, unknown>;
+}
+
+export function targetToForm(target: TargetConfig): TargetFormData {
+  return {
+    name: target.name,
+    device_id: target.device_id,
+    volume_entity: target.volume_entity,
+    control_entity: target.control_entity,
+    wake_action: target.wake_action?.action,
+    wake_target: target.wake_action?.target,
+    wake_data: target.wake_action?.data,
+  };
+}
+
+/** Validate drafts before publishing them to the card preview. */
+export function targetFormsToConfig(forms: TargetFormData[]): TargetConfig[] {
+  return validateTargets(forms.map((form) => ({
+    name: form.name?.trim(),
+    device_id: form.device_id?.trim(),
+    ...(form.volume_entity ? { volume_entity: form.volume_entity } : {}),
+    ...(form.control_entity ? { control_entity: form.control_entity } : {}),
+    ...(form.wake_action?.trim() ? {
+      wake_action: {
+        action: form.wake_action.trim(),
+        ...(form.wake_target ? { target: form.wake_target } : {}),
+        ...(form.wake_data ? { data: form.wake_data } : {}),
+      },
+    } : {}),
+  })));
+}
 
 /** Values as ha-form sees them. `height` 0 means automatic. */
 export interface FormData {
@@ -175,6 +223,8 @@ export interface FormData {
   show_now_playing: boolean;
   show_search: boolean;
   default_target?: string;
+  all_clients: boolean;
+  allowed_targets: string[];
 }
 
 const MIN_HEIGHT = 200;
@@ -199,6 +249,7 @@ export function formToConfig(
     show_now_playing: data.show_now_playing ? undefined : false,
     show_search: data.show_search ? undefined : false,
     default_target: data.default_target || undefined,
+    allowed_targets: data.all_clients ? undefined : data.allowed_targets,
   };
   const config = Object.fromEntries(Object.entries(base).filter(([key]) => !(key in values)));
   for (const [key, value] of Object.entries(values)) {
@@ -218,5 +269,7 @@ export function configToForm(config: CardConfig): FormData {
     show_now_playing: config.show_now_playing,
     show_search: config.show_search,
     default_target: config.default_target ?? undefined,
+    all_clients: config.allowed_targets === null,
+    allowed_targets: [...(config.allowed_targets ?? [])],
   };
 }

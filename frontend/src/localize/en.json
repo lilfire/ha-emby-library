@@ -63,6 +63,7 @@
   "target.current": "Plays on {name}. Change client",
   "target.none": "Open Emby on the device you want to play on",
   "target.offline": "Off. Will be woken first",
+  "target.offline_no_wake": "Offline. Configure a wake action in client settings",
   "target.waking": "Waking {name}…",
   "target.starting": "Starting on {name}…",
   "target.no_response": "The client did not respond",
@@ -95,5 +96,19 @@
   "editor.size.large": "Large",
   "editor.height": "Height in pixels (0 = automatic)",
   "editor.default_target": "Preferred client",
-  "editor.targets_hint": "Clients that must be woken first (targets with wake_action) are edited in YAML."
+  "editor.all_clients": "Show all clients",
+  "editor.allowed_targets": "Clients available in this card",
+  "editor.targets_hint": "Configure clients below to wake them or use Home Assistant for volume and playback control. Name and Emby device ID are required; other fields are optional. Wake data accepts YAML.",
+  "editor.targets": "Client settings",
+  "editor.new_target": "New client",
+  "editor.add_target": "Add client",
+  "editor.remove_target": "Remove client",
+  "editor.target_error": "Client changes have not been saved. Enter a name and Emby device ID for each client, and a valid wake action (for example script.turn_on) if used.",
+  "editor.target.name": "Name",
+  "editor.target.device_id": "Emby client (device ID)",
+  "editor.target.volume_entity": "Media player for volume",
+  "editor.target.control_entity": "Media player for playback control",
+  "editor.target.wake_action": "Wake action (for example script.turn_on)",
+  "editor.target.wake_target": "Wake action target",
+  "editor.target.wake_data": "Wake action data (optional YAML)"
 }

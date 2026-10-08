@@ -84,6 +84,14 @@ export interface Session {
 export interface SessionsEvent {
   available: boolean;
   sessions: Session[];
+  clients?: KnownClient[];
+}
+
+/** Previously observed remote-controllable video clients; never live sessions. */
+export interface KnownClient {
+  device_id: string;
+  name: string;
+  client: string;
 }
 
 export type ShelfName = "resume" | "next_up" | "latest" | "suggestions";
@@ -135,6 +143,8 @@ export interface CardConfig {
   poster_size: PosterSize;
   height: "auto" | number;
   default_target: string | null;
+  /** null allows all clients; an explicit list restricts this card. */
+  allowed_targets: string[] | null;
   targets: TargetConfig[];
 }
 

@@ -26,6 +26,7 @@ import type {
   ExternalControl,
   ExternalVolume,
   HomeAssistant,
+  KnownClient,
   Session,
   SessionsEvent,
   StartView,
@@ -35,6 +36,8 @@ import {
   chooseDevice,
   externalControls,
   externalVolumes,
+  filterCardClients,
+  mergeClientTargets,
   sessionForDevice,
   targetStorageKey,
 } from "./util";
@@ -44,7 +47,7 @@ import "./views/library";
 import type { EmbyLibrarySearch } from "./views/search";
 import "./views/search";
 
-export const CARD_VERSION = "0.2.0";
+export const CARD_VERSION = "0.3.0";
 
 const WAKE_TIMEOUT_MS = 60_000;
 const PLAY_START_TIMEOUT_MS = 10_000;
@@ -111,6 +114,8 @@ export class EmbyLibraryCard extends LitElement {
 
   @state() private _sessions: Session[] = [];
 
+  @state() private _clients: KnownClient[] = [];
+
   @state() private _receivedAt = 0;
 
   @state() private _available = true;
@@ -169,7 +174,7 @@ export class EmbyLibraryCard extends LitElement {
 
   /** Re-render only when a configured volume_entity or control_entity changes. */
   private _updateVolumes(): void {
-    const targets = this._config?.targets ?? [];
+    const targets = this._targets;
     if (targets.length === 0 && this._volumesKey === "{}" && this._controlsKey === "{}") return;
     const volumes = externalVolumes(targets, this._hass?.states);
     const key = JSON.stringify(volumes);
@@ -291,6 +296,7 @@ export class EmbyLibraryCard extends LitElement {
     if (changed) {
       this._stacks = { home: [], library: [], search: [] };
       this._sessions = [];
+      this._clients = [];
       this._showTab(this._tab);
     }
 
@@ -309,6 +315,7 @@ export class EmbyLibraryCard extends LitElement {
     const wasAvailable = this._available;
     const wasActive = this._sessions.some((session) => session.state !== "idle");
     this._sessions = event.sessions;
+    this._clients = event.clients ?? [];
     this._available = event.available;
     this._receivedAt = Date.now();
 
@@ -372,14 +379,30 @@ export class EmbyLibraryCard extends LitElement {
     return chooseDevice(
       this._selectedDevice,
       config.default_target,
-      this._sessions,
-      config.targets,
+      this._visibleSessions,
+      this._targets,
     );
+  }
+
+  private get _targets(): TargetConfig[] {
+    return filterCardClients(
+      mergeClientTargets(this._clients, this._config?.targets ?? []),
+      this._config?.allowed_targets ?? null,
+    );
+  }
+
+  private get _visibleSessions(): Session[] {
+    return filterCardClients(this._sessions, this._config?.allowed_targets ?? null);
+  }
+
+  private _allowsDevice(deviceId: string): boolean {
+    const allowed = this._config?.allowed_targets ?? null;
+    return allowed === null || allowed.includes(deviceId);
   }
 
   private _deviceName(deviceId: string | null): string | null {
     if (deviceId === null) return null;
-    const target = this._config?.targets.find((candidate) => candidate.device_id === deviceId);
+    const target = this._targets.find((candidate) => candidate.device_id === deviceId);
     if (target) return target.name;
     return (
       this._sessions.find((session) => session.device_id === deviceId)?.device_name ?? null
@@ -393,7 +416,7 @@ export class EmbyLibraryCard extends LitElement {
 
   private async _requestPlay(detail: PlayDetail): Promise<void> {
     const deviceId = this._device;
-    const session = sessionForDevice(deviceId, this._sessions);
+    const session = sessionForDevice(deviceId, this._visibleSessions);
     if (session) return this._playOn(session, detail);
     const target = this._config?.targets.find(
       (candidate) => candidate.device_id === deviceId && candidate.wake_action !== undefined,
@@ -403,6 +426,7 @@ export class EmbyLibraryCard extends LitElement {
   }
 
   private async _playOn(session: Session, detail: PlayDetail): Promise<void> {
+    if (!this._allowsDevice(session.device_id)) return;
     const api = this._api;
     if (!api) return;
     const name = this._deviceName(session.device_id) ?? session.device_name;
@@ -433,6 +457,7 @@ export class EmbyLibraryCard extends LitElement {
   }
 
   private async _wakeAndPlay(target: TargetConfig, detail: PlayDetail): Promise<void> {
+    if (!this._allowsDevice(target.device_id)) return;
     const hass = this._hass;
     const action = target.wake_action;
     if (!hass || !action) return;
@@ -460,6 +485,7 @@ export class EmbyLibraryCard extends LitElement {
     const pending = this._picker?.pending ?? null;
     this._picker = null;
     const choice = event.detail;
+    if (!this._allowsDevice(choice.kind === "session" ? choice.session.device_id : choice.target.device_id)) return;
     if (choice.kind === "session") {
       this._storeDevice(choice.session.device_id);
       if (pending) void this._playOn(choice.session, pending);
@@ -472,6 +498,7 @@ export class EmbyLibraryCard extends LitElement {
   private readonly _onControl = (event: CustomEvent<ControlDetail>): void => {
     event.stopPropagation();
     const { sessionId, command, value } = event.detail;
+    if (!this._visibleSessions.some((session) => session.session_id === sessionId)) return;
     this._api?.control(sessionId, command, value).catch((err: unknown) => {
       this._show(errorText(this._lang, toApiError(err).code));
     });
@@ -483,7 +510,7 @@ export class EmbyLibraryCard extends LitElement {
     const hass = this._hass;
     const { entityId, level, muted } = event.detail;
     // Only entities named in this card's own configuration can be controlled.
-    const allowed = this._config?.targets.some((target) => target.volume_entity === entityId);
+    const allowed = this._targets.some((target) => target.volume_entity === entityId);
     if (!hass || !allowed) return;
     const call =
       level !== undefined
@@ -509,7 +536,7 @@ export class EmbyLibraryCard extends LitElement {
     const { entityId, command } = event.detail;
     const service = MEDIA_SERVICES[command];
     // Only entities named in this card's own configuration can be controlled.
-    const allowed = this._config?.targets.some((target) => target.control_entity === entityId);
+    const allowed = this._targets.some((target) => target.control_entity === entityId);
     if (!hass || !allowed || !service) return;
     hass
       .callService("media_player", service, {}, { entity_id: entityId })
@@ -681,7 +708,7 @@ export class EmbyLibraryCard extends LitElement {
           ? html`<emby-library-now-playing
               class="now-playing"
               .language=${this._lang}
-              .sessions=${this._sessions}
+              .sessions=${this._visibleSessions}
               .volumes=${this._volumes}
               .controls=${this._controls}
               .receivedAt=${this._receivedAt}
@@ -690,8 +717,8 @@ export class EmbyLibraryCard extends LitElement {
         ${this._picker !== null
           ? html`<emby-library-target-picker
               .language=${this._lang}
-              .sessions=${this._sessions}
-              .targets=${config.targets}
+              .sessions=${this._visibleSessions}
+              .targets=${this._targets}
               .selectedDeviceId=${this._device}
               @emby-target-chosen=${this._onTargetChosen}
               @emby-close=${() => (this._picker = null)}

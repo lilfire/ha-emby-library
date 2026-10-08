@@ -8,7 +8,7 @@ reaches the browser, and it works when Home Assistant is on https and Emby is on
 
 This project is unofficial and not affiliated with Emby.
 
-> **Status: 0.2.0 in development.** The code is complete for v1 and covered by automated
+> **Status: 0.3.0.** The code is covered by automated
 > tests, but it has not yet been verified against a real Emby server (see
 > [Compatibility](#compatibility)). Screenshots are added with the first release.
 
@@ -63,7 +63,8 @@ show_search: true
 poster_size: medium          # small | medium | large
 height: auto                 # auto | number of pixels (at least 200)
 default_target: null         # device_id of the preferred client
-targets:                     # optional, edited in YAML
+allowed_targets: null        # all clients; or a list of Emby device IDs for this card
+targets:                     # optional, also available in the visual editor
   - name: Living room TV
     device_id: 9ef8d0a2...
     wake_action:
@@ -84,12 +85,45 @@ targets:                     # optional, edited in YAML
 | `poster_size` | `medium` | Poster width 110, 150 or 190 pixels. |
 | `height` | `auto` | A fixed height makes the card scroll internally. |
 | `default_target` | none | `device_id` of the client that is preselected. |
+| `allowed_targets` | all clients | Only these Emby device IDs appear in this card; `[]` shows no clients. Applies to client selection and Now playing. |
 | `targets` | none | Named clients that may be switched off, see below. |
+
+The visual editor includes **Client settings**: add a client, choose an online Emby
+client or enter its device ID, then select media players for volume and playback
+control. A wake action (for example `script.turn_on`) and its target are optional;
+extra action data can be entered as YAML in that field. Existing YAML client settings
+can also be edited here.
+
+Home rows are selected under **Home rows**. Select all four to show Continue watching,
+Next up, Recently added and Recommended; rows without any results are hidden.
+Library browsing, item details and playback buttons are accessed inside the card,
+and Now playing appears when a client is playing.
 
 ### Playback and clients
 
+Each card can show its own selection of clients. In the visual editor, turn off
+**Show all clients**, then choose **Clients available in this card**. For example,
+select only the living room TV in one card, only the bedroom TV in another, and
+both TVs plus the office TV in a third. Selected offline clients remain visible
+and can be woken when they have a `wake_action`. The **Preferred client** chooses
+the default within that selection. A remembered browser choice outside the card's
+selection is ignored. Cards with only one online client select it automatically.
+
+```yaml
+type: custom:emby-library-card
+allowed_targets: [living_room_device_id, bedroom_device_id, office_device_id]
+default_target: living_room_device_id
+```
+
 Emby can only start playback on a client that is open and announces remote control.
 The card lists those clients in the client picker (the cast button at the top right).
+Clients that have announced remote control and video playback are remembered per
+Emby user in Home Assistant, including across restarts. They remain visible when
+disconnected, in both the card editor and the client picker. Configure a `wake_action`
+to start playback on a disconnected client; without one it is shown as offline and
+cannot be used until it connects. Devices not yet observed by this integration can
+be added manually under **Client settings**. Video support is checked again when
+the client connects, before playback starts.
 The choice is remembered per browser. The preselected client is, in order: the stored
 choice, `default_target`, and otherwise the only available client.
 

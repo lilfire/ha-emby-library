@@ -90,7 +90,7 @@ export class EmbyLibraryTargetPicker extends LitElement {
                   ${offline.map((target) =>
                     this._renderRow(
                       target.name,
-                      this._t("target.offline"),
+                      this._t(target.wake_action ? "target.offline" : "target.offline_no_wake"),
                       "mdi:power-sleep",
                       target.device_id === this.selectedDeviceId,
                       target.wake_action === undefined,
