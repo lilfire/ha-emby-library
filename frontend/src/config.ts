@@ -164,6 +164,14 @@ export function validateConfig(raw: unknown): CardConfig {
       throw new Error('"allowed_targets" must be a list of Emby device IDs');
     }
     config.allowed_targets = [...new Set(raw.allowed_targets as string[])];
+  } else if (raw.allowed_targets === undefined && config.targets.length) {
+    // Client settings also select the clients for this card. Explicit null
+    // is the visual editor's "Show all clients" override.
+    config.allowed_targets = [...new Set(config.targets.map((target) => target.device_id))];
+  }
+  if (config.allowed_targets !== null && config.default_target !== null &&
+    !config.allowed_targets.includes(config.default_target)) {
+    config.default_target = null;
   }
   if (config.start_view === "search" && !config.show_search) {
     throw new Error('"start_view: search" requires "show_search: true"');
@@ -212,6 +220,35 @@ export function targetFormsToConfig(forms: TargetFormData[]): TargetConfig[] {
   })));
 }
 
+/** Keep client selection and preferred client in sync with client editor changes. */
+export function updateClientSettings(
+  base: Record<string, unknown>, forms: TargetFormData[],
+): Record<string, unknown> {
+  const previous = validateConfig(base);
+  const targets = targetFormsToConfig(forms);
+  const config = { ...base };
+  const ids = new Set(targets.map((target) => target.device_id));
+  const removed = new Set(previous.targets
+    .filter((target) => !ids.has(target.device_id)).map((target) => target.device_id));
+  if (targets.length) config.targets = targets;
+  else delete config.targets;
+  if (Array.isArray(base.allowed_targets)) {
+    const added = targets.filter((target) =>
+      !previous.targets.some((old) => old.device_id === target.device_id));
+    const allowed = [...new Set([
+      ...(previous.allowed_targets ?? []).filter((id) => !removed.has(id)),
+      ...added.map((target) => target.device_id),
+    ])];
+    if (!targets.length && removed.size && !allowed.length) delete config.allowed_targets;
+    else config.allowed_targets = allowed;
+  }
+  if (typeof config.default_target === "string" && removed.has(config.default_target)) {
+    delete config.default_target;
+  }
+  if (validateConfig(config).default_target === null) delete config.default_target;
+  return config;
+}
+
 /** Values as ha-form sees them. `height` 0 means automatic. */
 export interface FormData {
   entry?: string;
@@ -249,12 +286,16 @@ export function formToConfig(
     show_now_playing: data.show_now_playing ? undefined : false,
     show_search: data.show_search ? undefined : false,
     default_target: data.default_target || undefined,
-    allowed_targets: data.all_clients ? undefined : data.allowed_targets,
+    allowed_targets: data.all_clients
+      ? (Array.isArray(base.targets) && base.targets.length ? null : undefined)
+      : data.allowed_targets,
   };
   const config = Object.fromEntries(Object.entries(base).filter(([key]) => !(key in values)));
   for (const [key, value] of Object.entries(values)) {
     if (value !== undefined) config[key] = value;
   }
+  if (config.show_search === false && config.start_view === "search") delete config.start_view;
+  if (validateConfig(config).default_target === null) delete config.default_target;
   return config;
 }
 

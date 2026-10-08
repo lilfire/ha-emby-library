@@ -47,7 +47,7 @@ import "./views/library";
 import type { EmbyLibrarySearch } from "./views/search";
 import "./views/search";
 
-export const CARD_VERSION = "0.3.0";
+export const CARD_VERSION = "0.3.1";
 
 const WAKE_TIMEOUT_MS = 60_000;
 const PLAY_START_TIMEOUT_MS = 10_000;

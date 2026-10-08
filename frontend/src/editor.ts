@@ -11,7 +11,7 @@ import {
   configToForm,
   formToConfig,
   targetToForm,
-  targetFormsToConfig,
+  updateClientSettings,
   validateConfig,
 } from "./config";
 import { languageOf, translate, type TranslationKey } from "./localize";
@@ -147,12 +147,11 @@ export class EmbyLibraryCardEditor extends LitElement {
         targets.set(session.device_id, `${session.device_name} (${session.client})`);
       }
     }
-    if (config.default_target && !targets.has(config.default_target)) {
-      targets.set(config.default_target, config.default_target);
-    }
     for (const id of config.allowed_targets ?? []) {
       if (!targets.has(id)) targets.set(id, id);
     }
+    const available = [...targets]
+      .filter(([value]) => config.allowed_targets === null || config.allowed_targets.includes(value));
     return [
       {
         name: "entry",
@@ -208,28 +207,21 @@ export class EmbyLibraryCardEditor extends LitElement {
           options: [...targets].map(([value, label]) => option(value, label)),
         } },
       }]),
-      {
+      ...(config.allowed_targets !== null && available.length > 1 ? [{
         name: "default_target",
         selector: {
           select: {
             mode: "dropdown",
-            custom_value: true,
-            options: [...targets]
-              .filter(([value]) => config.allowed_targets === null || config.allowed_targets.includes(value))
-              .map(([value, label]) => option(value, label)),
+            options: available.map(([value, label]) => option(value, label)),
           },
         },
-      },
+      }] : []),
     ];
   }
 
   private _valueChanged(event: CustomEvent<{ value: FormData }>): void {
     event.stopPropagation();
     const config = formToConfig(event.detail.value, this._raw);
-    if (config.show_search === false && config.start_view === "search") delete config.start_view;
-    if (Array.isArray(config.allowed_targets) && !config.allowed_targets.includes(config.default_target)) {
-      delete config.default_target;
-    }
     this._emitConfig(config);
   }
 
@@ -262,18 +254,12 @@ export class EmbyLibraryCardEditor extends LitElement {
       } } },
       { name: "volume_entity", selector: { entity: { filter: { domain: "media_player" } } } },
       { name: "control_entity", selector: { entity: { filter: { domain: "media_player" } } } },
-      { name: "wake_action", selector: { text: {} } },
-      { name: "wake_target", selector: { target: {} } },
-      { name: "wake_data", selector: { object: {} } },
     ];
   }
 
   private _saveTargets(): void {
     try {
-      const targets = targetFormsToConfig(this._targetForms);
-      const config = { ...this._raw };
-      if (targets.length) config.targets = targets;
-      else delete config.targets;
+      const config = updateClientSettings(this._raw, this._targetForms);
       this._targetError = "";
       this._emitConfig(config);
     } catch {
@@ -284,7 +270,9 @@ export class EmbyLibraryCardEditor extends LitElement {
 
   private _targetChanged(index: number, event: CustomEvent<{ value: TargetFormData }>): void {
     event.stopPropagation();
-    this._targetForms = this._targetForms.map((form, i) => i === index ? event.detail.value : form);
+    // Preserve YAML-only settings even if ha-form emits only its visible fields.
+    this._targetForms = this._targetForms.map((form, i) =>
+      i === index ? { ...form, ...event.detail.value } : form);
     this._saveTargets();
   }
 
@@ -296,11 +284,13 @@ export class EmbyLibraryCardEditor extends LitElement {
   protected override render(): TemplateResult | typeof nothing {
     const config = this._config;
     if (!this._hass || !config || !this._formReady) return nothing;
+    const schema = this._schema(config);
+    const playerSchema = schema.filter((field) => field.name === "default_target");
     return html`
       <ha-form
         .hass=${this._hass}
         .data=${configToForm(config)}
-        .schema=${this._schema(config)}
+        .schema=${schema.filter((field) => field.name !== "default_target")}
         .computeLabel=${(schema: FormSchema) => this._t(`editor.${schema.name}` as TranslationKey)}
         @value-changed=${this._valueChanged}
       ></ha-form>
@@ -323,6 +313,15 @@ export class EmbyLibraryCardEditor extends LitElement {
       <button @click=${() => { this._targetForms = [...this._targetForms, {}]; }}>
         ${this._t("editor.add_target")}
       </button>
+      ${playerSchema.length ? html`
+        <ha-form
+          .hass=${this._hass}
+          .data=${configToForm(config)}
+          .schema=${playerSchema}
+          .computeLabel=${(field: FormSchema) => this._t(`editor.${field.name}` as TranslationKey)}
+          @value-changed=${this._valueChanged}
+        ></ha-form>
+      ` : nothing}
     `;
   }
 

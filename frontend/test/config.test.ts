@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_CONFIG, configToForm, formToConfig, validateConfig,
-  targetToForm, targetFormsToConfig,
+  targetToForm, targetFormsToConfig, updateClientSettings,
 } from "../src/config";
 
 const TYPE = "custom:emby-library-card";
@@ -140,6 +140,45 @@ describe("validateConfig", () => {
 });
 
 describe("editor mapping", () => {
+  it("clears the search start view when the editor disables search", () => {
+    const base = { type: TYPE, start_view: "search" };
+    const saved = formToConfig({ ...configToForm(validateConfig(base)), show_search: false }, base);
+    expect(saved.start_view).toBeUndefined();
+    expect(validateConfig(saved).show_search).toBe(false);
+  });
+  it("uses configured clients unless Show all clients explicitly overrides them", () => {
+    const base = { type: TYPE, targets: [{ name: "Stue", device_id: "tv" }] };
+    expect(validateConfig(base).allowed_targets).toEqual(["tv"]);
+    const form = configToForm(validateConfig(base));
+    expect(form.all_clients).toBe(false);
+    const all = formToConfig({ ...form, all_clients: true }, base);
+    expect(all.allowed_targets).toBeNull();
+    expect(validateConfig(all).allowed_targets).toBeNull();
+    expect(validateConfig({ ...base, allowed_targets: [] }).allowed_targets).toEqual([]);
+  });
+
+  it("tracks add, change and remove client settings without retaining old restrictions", () => {
+    const base = { type: TYPE, targets: [{ name: "Stue", device_id: "tv" }],
+      allowed_targets: ["tv", "office"], default_target: "tv" };
+    const changed = updateClientSettings(base, [{ name: "Bedroom", device_id: "bedroom" }]);
+    expect(validateConfig(changed).allowed_targets).toEqual(["office", "bedroom"]);
+    expect(changed.default_target).toBeUndefined();
+    const removed = updateClientSettings({ ...base, allowed_targets: ["tv"] }, []);
+    expect(removed).toEqual({ type: TYPE });
+    expect(validateConfig(removed).allowed_targets).toBeNull();
+    const added = updateClientSettings(removed, [{ name: "Stue", device_id: "tv" }]);
+    expect(validateConfig(added).allowed_targets).toEqual(["tv"]);
+    expect(updateClientSettings({ type: TYPE, allowed_targets: [] }, []).allowed_targets).toEqual([]);
+  });
+
+  it("preserves an explicit all-clients override when client settings change", () => {
+    const changed = updateClientSettings({ type: TYPE, allowed_targets: null }, [
+      { name: "Stue", device_id: "tv", volume_entity: "media_player.tv" },
+    ]);
+    expect(validateConfig(changed).allowed_targets).toBeNull();
+    expect(validateConfig(changed).targets[0]?.volume_entity).toBe("media_player.tv");
+  });
+
   it("round-trips a per-card selection, including selecting no clients", () => {
     for (const ids of [["living_room"], ["bedroom", "living_room", "office"], []]) {
       const base = { type: TYPE, allowed_targets: ids };
@@ -215,6 +254,7 @@ describe("editor mapping", () => {
     );
     expect(config).toEqual({
       ...base,
+      allowed_targets: ["x"],
       entry: "abc",
       shelves: ["latest", "resume"],
       shelf_limit: 10,

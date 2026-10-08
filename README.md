@@ -8,7 +8,7 @@ reaches the browser, and it works when Home Assistant is on https and Emby is on
 
 This project is unofficial and not affiliated with Emby.
 
-> **Status: 0.3.0.** The code is covered by automated
+> **Status: 0.3.1.** The code is covered by automated
 > tests, but it has not yet been verified against a real Emby server (see
 > [Compatibility](#compatibility)). Screenshots are added with the first release.
 
@@ -26,6 +26,16 @@ This project is unofficial and not affiliated with Emby.
 
 Not part of v1: playback in the card itself, casting to non-Emby devices, music,
 audiobooks, photos, live TV, `media_player` entities and server administration.
+
+## Changes in 0.3.1
+
+- Adding clients in the visual editor selects them for the card. Changing or removing
+  clients updates the selection and clears a default player that is no longer selected.
+- **Default player** appears below client settings when at least two clients are selected.
+- **Show all clients** overrides the configured selection. In YAML, use
+  `allowed_targets: null` for this override; omit it to follow the configured `targets`.
+- Wake actions are configured in YAML and preserved when editing other client settings.
+- Disabling Search in the editor resets a Search start view to Home.
 
 ## Requirements
 
@@ -85,14 +95,13 @@ targets:                     # optional, also available in the visual editor
 | `poster_size` | `medium` | Poster width 110, 150 or 190 pixels. |
 | `height` | `auto` | A fixed height makes the card scroll internally. |
 | `default_target` | none | `device_id` of the client that is preselected. |
-| `allowed_targets` | all clients | Only these Emby device IDs appear in this card; `[]` shows no clients. Applies to client selection and Now playing. |
-| `targets` | none | Named clients that may be switched off, see below. |
+| `allowed_targets` | configured targets, or all clients if none | Only these Emby device IDs appear in this card; `[]` shows no clients and `null` explicitly shows all clients. Applies to client selection and Now playing. |
+| `targets` | none | Select clients for the card and configure their names, wake actions and controls, see below. |
 
 The visual editor includes **Client settings**: add a client, choose an online Emby
 client or enter its device ID, then select media players for volume and playback
-control. A wake action (for example `script.turn_on`) and its target are optional;
-extra action data can be entered as YAML in that field. Existing YAML client settings
-can also be edited here.
+control. Wake actions are an advanced YAML-only setting. The visual editor preserves
+existing wake actions when you change a client's name, volume or playback controls.
 
 Home rows are selected under **Home rows**. Select all four to show Continue watching,
 Next up, Recently added and Recommended; rows without any results are hidden.
@@ -105,9 +114,18 @@ Each card can show its own selection of clients. In the visual editor, turn off
 **Show all clients**, then choose **Clients available in this card**. For example,
 select only the living room TV in one card, only the bedroom TV in another, and
 both TVs plus the office TV in a third. Selected offline clients remain visible
-and can be woken when they have a `wake_action`. The **Preferred client** chooses
-the default within that selection. A remembered browser choice outside the card's
-selection is ignored. Cards with only one online client select it automatically.
+and can be woken when they have a `wake_action`. **Default player** appears below
+client settings only when at least two clients are selected. It offers only those
+clients and clears the default when that client leaves the selection. A remembered
+browser choice outside the card's selection is ignored. Cards with only one online
+client select it automatically.
+
+Adding clients under **Client settings** also selects them for the card. Removing
+or changing a client updates the selection and clears a removed preferred client.
+Removing the last configured client returns to all discovered clients. **Show all
+clients** explicitly overrides this selection while keeping volume, playback and
+wake settings. In YAML, omit `allowed_targets` to follow `targets`, or set it to
+`null` to show all clients regardless of `targets`.
 
 ```yaml
 type: custom:emby-library-card
@@ -127,10 +145,10 @@ the client connects, before playback starts.
 The choice is remembered per browser. The preselected client is, in order: the stored
 choice, `default_target`, and otherwise the only available client.
 
-`device_id` is Emby's device ID. The visual editor lists the clients that are online
-under **Preferred client**, which is the easiest way to find it.
+`device_id` is Emby's device ID. Choose a discovered client under **Client settings**
+in the visual editor to avoid entering the ID manually.
 
-### Waking a client with `targets`
+### Waking a client with `targets` (advanced, YAML only)
 
 A client that is switched off does not show up in Emby. With `targets` you can name it
 anyway and give it a `wake_action`: any Home Assistant action that turns on the device
