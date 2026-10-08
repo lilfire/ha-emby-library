@@ -9,6 +9,7 @@ from homeassistant.components.frontend import DATA_EXTRA_MODULE_URL
 from homeassistant.components.lovelace.const import LOVELACE_DATA
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
@@ -34,7 +35,8 @@ async def test_setup_registers_card_and_unloads(
 
     card = _card_urls(hass)
     assert len(card) == 1
-    assert card[0].startswith("/emby_library_static/emby-library-card.js?v=0.2.0-")
+    integration = await async_get_integration(hass, DOMAIN)
+    assert card[0].startswith(f"/emby_library_static/emby-library-card.js?v={integration.version}-")
     resource = hass.data[LOVELACE_DATA].resources.async_items()[0]
     assert resource["type"] == "module"
     extra = hass.data.get(DATA_EXTRA_MODULE_URL)
