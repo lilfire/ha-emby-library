@@ -174,6 +174,12 @@ class EmbyClient:
         """Return one item with all fields."""
         return await self._get_dict(f"/Users/{self._uid}/Items/{item_id}")
 
+    async def set_played(self, item_id: str, played: bool) -> None:
+        """Update watched status for the configured user."""
+        await self._request(
+            "POST" if played else "DELETE", f"/Users/{self._uid}/PlayedItems/{item_id}"
+        )
+
     # E6
     async def resume(self, limit: int) -> list[JsonDict]:
         """Return items the user can continue watching."""

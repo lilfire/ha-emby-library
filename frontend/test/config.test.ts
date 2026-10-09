@@ -146,54 +146,43 @@ describe("editor mapping", () => {
     expect(saved.start_view).toBeUndefined();
     expect(validateConfig(saved).show_search).toBe(false);
   });
-  it("uses configured clients unless Show all clients explicitly overrides them", () => {
+  it("only allows configured clients even with a legacy all-clients override", () => {
     const base = { type: TYPE, targets: [{ name: "Stue", device_id: "tv" }] };
-    expect(validateConfig(base).allowed_targets).toEqual(["tv"]);
-    const form = configToForm(validateConfig(base));
-    expect(form.all_clients).toBe(false);
-    const all = formToConfig({ ...form, all_clients: true }, base);
-    expect(all.allowed_targets).toBeNull();
-    expect(validateConfig(all).allowed_targets).toBeNull();
-    expect(validateConfig({ ...base, allowed_targets: [] }).allowed_targets).toEqual([]);
+    for (const allowed_targets of [undefined, null, [], ["office"]]) {
+      expect(validateConfig({ ...base, allowed_targets }).allowed_targets).toEqual(["tv"]);
+    }
+    expect(validateConfig({ type: TYPE }).allowed_targets).toEqual([]);
+    expect(validateConfig({ type: TYPE, allowed_targets: null }).allowed_targets).toEqual([]);
+    expect(formToConfig(configToForm(validateConfig(base)), base)).toEqual(base);
   });
 
-  it("tracks add, change and remove client settings without retaining old restrictions", () => {
+  it("tracks client edits and removing the last client leaves no clients", () => {
     const base = { type: TYPE, targets: [{ name: "Stue", device_id: "tv" }],
       allowed_targets: ["tv", "office"], default_target: "tv" };
     const changed = updateClientSettings(base, [{ name: "Bedroom", device_id: "bedroom" }]);
-    expect(validateConfig(changed).allowed_targets).toEqual(["office", "bedroom"]);
+    expect(validateConfig(changed).allowed_targets).toEqual(["bedroom"]);
     expect(changed.default_target).toBeUndefined();
-    const removed = updateClientSettings({ ...base, allowed_targets: ["tv"] }, []);
+    const removed = updateClientSettings(base, []);
     expect(removed).toEqual({ type: TYPE });
-    expect(validateConfig(removed).allowed_targets).toBeNull();
+    expect(validateConfig(removed).allowed_targets).toEqual([]);
     const added = updateClientSettings(removed, [{ name: "Stue", device_id: "tv" }]);
     expect(validateConfig(added).allowed_targets).toEqual(["tv"]);
-    expect(updateClientSettings({ type: TYPE, allowed_targets: [] }, []).allowed_targets).toEqual([]);
   });
 
-  it("preserves an explicit all-clients override when client settings change", () => {
-    const changed = updateClientSettings({ type: TYPE, allowed_targets: null }, [
-      { name: "Stue", device_id: "tv", volume_entity: "media_player.tv" },
+  it("migrates legacy explicit selections into editable client settings", () => {
+    const base = { type: TYPE, allowed_targets: ["tv", "tv", "office"] };
+    const config = validateConfig(base);
+    expect(config.targets).toEqual([
+      { name: "tv", device_id: "tv" }, { name: "office", device_id: "office" },
     ]);
-    expect(validateConfig(changed).allowed_targets).toBeNull();
-    expect(validateConfig(changed).targets[0]?.volume_entity).toBe("media_player.tv");
+    expect(formToConfig(configToForm(config), base)).toEqual({ type: TYPE, targets: config.targets });
+    expect(validateConfig(updateClientSettings(base, [])).allowed_targets).toEqual([]);
   });
 
-  it("round-trips a per-card selection, including selecting no clients", () => {
-    for (const ids of [["living_room"], ["bedroom", "living_room", "office"], []]) {
-      const base = { type: TYPE, allowed_targets: ids };
-      const form = configToForm(validateConfig(base));
-      expect(form.all_clients).toBe(false);
-      expect(formToConfig(form, base)).toEqual(base);
-      expect(formToConfig({ ...form, all_clients: true }, base)).toEqual({ type: TYPE });
-    }
-  });
-
-  it("rejects malformed client selections", () => {
+  it("rejects malformed legacy client selections", () => {
     for (const allowed_targets of ["tv", [""], [12], ["   "]]) {
       expect(() => validateConfig({ type: TYPE, allowed_targets })).toThrow("allowed_targets");
     }
-    expect(validateConfig({ type: TYPE, allowed_targets: ["tv", "tv"] }).allowed_targets).toEqual(["tv"]);
   });
 
   it("round-trips client settings including arbitrary wake targets and data", () => {
@@ -254,7 +243,6 @@ describe("editor mapping", () => {
     );
     expect(config).toEqual({
       ...base,
-      allowed_targets: ["x"],
       entry: "abc",
       shelves: ["latest", "resume"],
       shelf_limit: 10,

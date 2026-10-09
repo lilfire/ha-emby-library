@@ -14,6 +14,20 @@ function mockHass(result: unknown = {}) {
 }
 
 describe("EmbyApi", () => {
+  it("sends advanced filters, random selection, statistics and watched status", async () => {
+    const { hass, sendMessagePromise } = mockHass({ item: { id: "movie" } });
+    const api = new EmbyApi(hass, "entry");
+    const filters = { parent_id: "library", genre: "Drama", year: 2020,
+      max_runtime_minutes: 100, max_official_rating: "PG-13", filter: "played" as const };
+    await api.items({ ...filters, start_index: 60 });
+    expect(sendMessagePromise).toHaveBeenLastCalledWith({ type: "emby_library/items", entry_id: "entry", ...filters, start_index: 60 });
+    expect(await api.random({ ...filters, start_index: 60 })).toEqual({ id: "movie" });
+    expect(sendMessagePromise).toHaveBeenLastCalledWith({ type: "emby_library/random", entry_id: "entry", ...filters });
+    await api.statistics();
+    expect(sendMessagePromise).toHaveBeenLastCalledWith({ type: "emby_library/statistics", entry_id: "entry" });
+    await api.setPlayed("movie", false);
+    expect(sendMessagePromise).toHaveBeenLastCalledWith({ type: "emby_library/set_played", entry_id: "entry", item_id: "movie", played: false });
+  });
   it("sends the command prefix and the entry id", async () => {
     const { hass, sendMessagePromise } = mockHass({ views: [{ id: "v" }] });
     const views = await new EmbyApi(hass, "entry1").views();

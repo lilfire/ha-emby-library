@@ -2,14 +2,14 @@ import { LitElement, css, html, nothing, type PropertyValues, type TemplateResul
 import { customElement, property, query, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
-import { type EmbyApi, toApiError } from "../api";
+import { type EmbyApi, type ItemsQuery, toApiError } from "../api";
 import "../components/poster";
 import { fire } from "../events";
 import { translate } from "../localize";
 import { emptyState, errorState } from "../state-templates";
 import { sharedStyles } from "../styles";
-import type { CollectionType, ErrorCode, Item, SortField, SortOrder, View } from "../types";
-import { tileWindow } from "../util";
+import type { CollectionType, ErrorCode, Item, ItemFilter, LibraryStatistics, SortField, SortOrder, View } from "../types";
+import { formatRuntime, tileWindow } from "../util";
 
 export const PAGE_SIZE = 60;
 /** At most this many tiles are kept in the DOM. */
@@ -61,7 +61,25 @@ export class EmbyLibraryLibrary extends LitElement {
 
   @state() private _sortOrder: SortOrder = "asc";
 
-  @state() private _unplayed = false;
+  @state() private _filter: ItemFilter | "" = "";
+
+  @state() private _genre = "";
+
+  @state() private _year = "";
+
+  @state() private _runtime = "";
+
+  @state() private _rating = "";
+
+  @state() private _statistics: LibraryStatistics | null = null;
+
+  @state() private _statsError: ErrorCode | null = null;
+
+  @state() private _randomBusy = false;
+
+  @state() private _randomEmpty = false;
+
+  @state() private _randomError: ErrorCode | null = null;
 
   @state() private _windowStart = 0;
 
@@ -92,6 +110,10 @@ export class EmbyLibraryLibrary extends LitElement {
 
   protected override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has("api") || changed.has("parent")) {
+      if (changed.has("parent")) {
+        this._filter = "";
+        this._genre = this._year = this._runtime = this._rating = "";
+      }
       this._reload();
     } else if (changed.has("refreshKey") && (this._error !== null || this.parent === null)) {
       this._reload();
@@ -116,6 +138,8 @@ export class EmbyLibraryLibrary extends LitElement {
     this._windowStart = 0;
     this._spacer = 0;
     this._loading = false;
+    this._randomEmpty = false;
+    this._randomError = null;
     if (this.parent === null) {
       void this._loadViews();
     } else {
@@ -129,9 +153,60 @@ export class EmbyLibraryLibrary extends LitElement {
     try {
       const views = await this.api.views();
       if (generation === this._generation) this._views = views;
+      if (generation === this._generation) void this._loadStatistics(generation);
     } catch (err) {
       if (generation === this._generation) this._error = toApiError(err).code;
     }
+  }
+
+  private async _loadStatistics(generation: number): Promise<void> {
+    this._statistics = null;
+    this._statsError = null;
+    try {
+      const stats = await this.api.statistics();
+      if (generation === this._generation) this._statistics = stats;
+    } catch (err) {
+      if (generation === this._generation) this._statsError = toApiError(err).code;
+    }
+  }
+
+  private _query(): ItemsQuery {
+    return {
+      parent_id: this.parent!.id,
+      filter: this._filter || undefined,
+      genre: this._genre.trim() || undefined,
+      year: this._year ? Number(this._year) : undefined,
+      max_runtime_minutes: this._runtime ? Number(this._runtime) : undefined,
+      max_official_rating: this._rating.trim() || undefined,
+    };
+  }
+
+  private async _random(): Promise<void> {
+    if (!this.parent || this._randomBusy) return;
+    const generation = this._generation;
+    this._randomBusy = true;
+    this._randomEmpty = false;
+    this._randomError = null;
+    try {
+      const item = await this.api.random(this._query());
+      if (generation !== this._generation) return;
+      if (item) fire(this, "emby-open-item", { item });
+      else this._randomEmpty = true;
+    } catch (err) {
+      if (generation === this._generation) this._randomError = toApiError(err).code;
+    } finally {
+      this._randomBusy = false;
+    }
+  }
+
+  private _setFilterField(field: "genre" | "year" | "runtime" | "rating", event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.reportValidity()) return;
+    if (field === "genre") this._genre = input.value;
+    if (field === "year") this._year = input.value;
+    if (field === "runtime") this._runtime = input.value;
+    if (field === "rating") this._rating = input.value;
+    this._reload();
   }
 
   private get _hasMore(): boolean {
@@ -144,12 +219,11 @@ export class EmbyLibraryLibrary extends LitElement {
     this._loading = true;
     try {
       const page = await this.api.items({
-        parent_id: this.parent.id,
+        ...this._query(),
         sort_by: this._sortBy,
         sort_order: this._sortOrder,
         start_index: this._items.length,
         limit: PAGE_SIZE,
-        filter: this._unplayed ? "unplayed" : undefined,
       });
       if (generation !== this._generation) return;
       this._items = [...this._items, ...page.items];
@@ -227,11 +301,6 @@ export class EmbyLibraryLibrary extends LitElement {
     this._reload();
   }
 
-  private _toggleUnplayed(): void {
-    this._unplayed = !this._unplayed;
-    this._reload();
-  }
-
   protected override render(): TemplateResult {
     return this.parent === null ? this._renderViews() : this._renderGrid();
   }
@@ -247,6 +316,16 @@ export class EmbyLibraryLibrary extends LitElement {
       return emptyState(translate(this.language, "library.no_views"), "mdi:folder-off-outline");
     }
     return html`
+      <section class="statistics" aria-label=${translate(this.language, "stats.title")}>
+        <h3>${translate(this.language, "stats.title")}</h3>
+        ${this._statistics ? html`<div class="stats-grid">
+          ${(["movies", "series", "episodes", "unplayed_episodes"] as const).map(key => html`
+            <div><strong>${this._statistics![key]}</strong><span>${translate(this.language, `stats.${key}`)}</span></div>
+          `)}
+          <div><strong>${formatRuntime(this._statistics.runtime_s, translate(this.language, "time.h"), translate(this.language, "time.min")) || `0 ${translate(this.language, "time.min")}`}</strong><span>${translate(this.language, "stats.runtime")}</span></div>
+        </div>` : this._statsError ? errorState(this.language, this._statsError, () => void this._loadStatistics(this._generation))
+          : html`<p role="status">${translate(this.language, "stats.loading")}</p>`}
+      </section>
       <div class="views" role="list">
         ${this._views.map(
           (view) => html`
@@ -302,20 +381,35 @@ export class EmbyLibraryLibrary extends LitElement {
             icon=${this._sortOrder === "asc" ? "mdi:sort-ascending" : "mdi:sort-descending"}
           ></ha-icon>
         </button>
-        <button
-          class="chip"
-          aria-pressed=${this._unplayed ? "true" : "false"}
-          @click=${this._toggleUnplayed}
-        >
-          <ha-icon icon="mdi:eye-off-outline"></ha-icon>${t("library.unplayed")}
+        <label><span class="sr-only">${t("filter.status")}</span>
+          <select .value=${this._filter} @change=${(event: Event) => {
+            this._filter = (event.target as HTMLSelectElement).value as ItemFilter | "";
+            this._reload();
+          }}>
+            <option value="">${t("filter.all")}</option>
+            <option value="unplayed">${t("library.unplayed")}</option>
+            <option value="played">${t("detail.played")}</option>
+            <option value="favorites">${t("filter.favorites")}</option>
+          </select>
+        </label>
+        <button class="chip" ?disabled=${this._randomBusy} @click=${() => void this._random()}>
+          <ha-icon icon="mdi:dice-multiple"></ha-icon>${t(this._randomBusy ? "random.loading" : "random.choose")}
         </button>
         ${this._total !== null && this._total > 0
           ? html`<span class="count muted">${t("library.count", { count: this._total })}</span>`
           : nothing}
       </div>
+      <div class="filters">
+        <label>${t("filter.genre")}<input maxlength="100" .value=${this._genre} @change=${(event: Event) => this._setFilterField("genre", event)} /></label>
+        <label>${t("filter.year")}<input type="number" min="1800" max="2200" step="1" .value=${this._year} @change=${(event: Event) => this._setFilterField("year", event)} /></label>
+        <label>${t("filter.runtime")}<input type="number" min="1" max="1440" step="1" .value=${this._runtime} @change=${(event: Event) => this._setFilterField("runtime", event)} /></label>
+        <label>${t("filter.rating")}<input maxlength="50" placeholder="PG-13" .value=${this._rating} @change=${(event: Event) => this._setFilterField("rating", event)} /></label>
+      </div>
+      ${this._randomEmpty ? html`<p role="status">${t("random.empty")}</p>` : nothing}
+      ${this._randomError ? errorState(this.language, this._randomError, () => void this._random()) : nothing}
 
       ${empty
-        ? emptyState(t(this._unplayed ? "library.empty_unplayed" : "library.empty"))
+        ? emptyState(t(this._filter === "unplayed" ? "library.empty_unplayed" : "library.empty"))
         : html`
             <div class="spacer" style="height:${this._spacer}px"></div>
             <div class="grid" role="list" aria-busy=${this._loading ? "true" : "false"}>
@@ -416,6 +510,15 @@ export class EmbyLibraryLibrary extends LitElement {
         color: var(--primary-text-color);
         font: inherit;
       }
+      .filters, .stats-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+      .filters label, .stats-grid > div { display: flex; flex-direction: column; gap: 4px; }
+      .filters label { flex: 1 1 140px; font-size: 0.85em; }
+      input { box-sizing: border-box; width: 100%; min-height: 44px; padding: 8px; border: 1px solid var(--divider-color); border-radius: 8px; background: var(--card-background-color); color: var(--primary-text-color); font: inherit; }
+      .statistics { padding: 12px; margin-bottom: 16px; border-radius: var(--el-tile-radius); background: var(--el-surface); }
+      .statistics h3 { margin: 0 0 12px; }
+      .stats-grid > div { flex: 1 1 100px; }
+      .stats-grid strong { font-size: 1.3em; }
+      .stats-grid span { font-size: 0.85em; color: var(--el-muted); }
       .count {
         margin-left: auto;
         font-size: 0.85em;
@@ -425,7 +528,7 @@ export class EmbyLibraryLibrary extends LitElement {
         gap: 16px var(--el-gap);
         grid-template-columns: repeat(
           auto-fill,
-          minmax(min(var(--el-poster-width, 150px), 45%), 1fr)
+          minmax(min(var(--el-poster-width, 150px), 100%), 1fr)
         );
       }
       .skeleton.poster {

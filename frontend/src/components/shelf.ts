@@ -1,5 +1,5 @@
 import { LitElement, css, html, type TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
 import { sharedStyles } from "../styles";
@@ -7,9 +7,7 @@ import type { Item } from "../types";
 import type { ImageShape } from "../util";
 import "./poster";
 
-const SKELETON_TILES = 8;
-
-/** A horizontally scrolling row. `items === null` shows skeleton tiles. */
+/** One responsive row. `items === null` shows skeleton tiles. */
 @customElement("emby-library-shelf")
 export class EmbyLibraryShelf extends LitElement {
   @property() heading = "";
@@ -20,26 +18,63 @@ export class EmbyLibraryShelf extends LitElement {
 
   @property() language = "en";
 
+  @property({ type: Number }) posterWidth = 150;
+
+  @state() private _columns = 1;
+
+  @query(".row") private _row?: HTMLElement;
+
+  private _resizeObserver?: ResizeObserver;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    void this.updateComplete.then(() => {
+      if (!this.isConnected || !this._row) return;
+      this._resizeObserver ??= new ResizeObserver(() => this._measure());
+      this._resizeObserver.observe(this._row);
+      this._measure();
+    });
+  }
+
+  override disconnectedCallback(): void {
+    this._resizeObserver?.disconnect();
+    super.disconnectedCallback();
+  }
+
+  protected override updated(): void {
+    this._measure();
+  }
+
+  private _measure(): void {
+    const row = this._row;
+    if (!row) return;
+    const style = getComputedStyle(row);
+    const width = row.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const gap = parseFloat(style.columnGap) || 0;
+    const itemWidth = this.posterWidth * (this.shape === "still" ? 1.75 : 1);
+    this._columns = Math.max(1, Math.floor((width + gap) / (itemWidth + gap)));
+  }
+
   protected override render(): TemplateResult {
     return html`
       <section aria-label=${this.heading}>
         <h3>${this.heading}</h3>
         <div
           class="row ${this.shape}"
+          style=${`grid-template-columns: repeat(${this._columns}, minmax(0, 1fr))`}
           role="list"
           aria-busy=${this.items === null ? "true" : "false"}
-          @wheel=${this._onWheel}
         >
           ${this.items === null
             ? Array.from(
-                { length: SKELETON_TILES },
+                { length: this._columns },
                 () => html`<div class="cell" aria-hidden="true">
                   <div class="skeleton image"></div>
                   <div class="skeleton line"></div>
                 </div>`,
               )
             : repeat(
-                this.items,
+                this.items.slice(0, this._columns),
                 (item) => item.id,
                 (item) =>
                   html`<div class="cell" role="listitem">
@@ -55,24 +90,12 @@ export class EmbyLibraryShelf extends LitElement {
     `;
   }
 
-  /** Let a vertical mouse wheel scroll the row while it can still move. */
-  private _onWheel(event: WheelEvent): void {
-    if (event.ctrlKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
-    const row = event.currentTarget as HTMLElement;
-    const max = row.scrollWidth - row.clientWidth;
-    if (max <= 0) return;
-    const atStart = row.scrollLeft <= 0 && event.deltaY < 0;
-    const atEnd = row.scrollLeft >= max - 1 && event.deltaY > 0;
-    if (atStart || atEnd) return;
-    event.preventDefault();
-    row.scrollLeft += event.deltaMode === 1 ? event.deltaY * 32 : event.deltaY;
-  }
-
   static override styles = [
     sharedStyles,
     css`
       :host {
         display: block;
+        min-width: 0;
       }
       h3 {
         margin: 0 0 8px;
@@ -81,24 +104,12 @@ export class EmbyLibraryShelf extends LitElement {
         font-weight: 500;
       }
       .row {
-        display: flex;
-        gap: var(--el-gap);
-        overflow-x: auto;
-        overflow-y: hidden;
+        display: grid;
+        gap: 16px var(--el-gap);
         padding: 2px 16px 10px;
-        scroll-padding: 0 16px;
-        scroll-snap-type: x proximity;
-        scrollbar-width: thin;
-        overscroll-behavior-x: contain;
-        -webkit-overflow-scrolling: touch;
       }
       .cell {
-        flex: 0 0 var(--el-poster-width, 150px);
-        scroll-snap-align: start;
         min-width: 0;
-      }
-      .row.still .cell {
-        flex-basis: calc(var(--el-poster-width, 150px) * 1.75);
       }
       .skeleton.image {
         aspect-ratio: 2 / 3;

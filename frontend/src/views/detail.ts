@@ -40,6 +40,12 @@ export class EmbyLibraryDetail extends LitElement {
 
   @state() private _backdropFailed = false;
 
+  @state() private _playedBusy = false;
+
+  @state() private _playedError: ErrorCode | null = null;
+
+  @state() private _trailerIndex: number | null = null;
+
   @query(".overview") private _overview?: HTMLElement;
 
   private _generation = 0;
@@ -57,6 +63,8 @@ export class EmbyLibraryDetail extends LitElement {
       this._expanded = false;
       this._posterFailed = false;
       this._backdropFailed = false;
+      this._trailerIndex = null;
+      this._playedError = null;
       void this._load();
     } else if (changed.has("refreshKey")) {
       void this._load();
@@ -133,6 +141,22 @@ export class EmbyLibraryDetail extends LitElement {
     if (this._item) fire(this, "emby-play", { itemId: this._item.id, mode });
   }
 
+  private async _setPlayed(item: ItemDetail): Promise<void> {
+    if (this._playedBusy) return;
+    const itemId = this.itemId;
+    this._playedBusy = true;
+    this._playedError = null;
+    try {
+      await this.api.setPlayed(item.id, !item.played);
+      fire(this, "emby-library-changed", {});
+      if (this.itemId === itemId) await this._load();
+    } catch (err) {
+      if (this.itemId === itemId) this._playedError = toApiError(err).code;
+    } finally {
+      this._playedBusy = false;
+    }
+  }
+
   private _open(item: Pick<Item, "id" | "type" | "name" | "is_folder">): void {
     fire(this, "emby-open-item", { item });
   }
@@ -152,6 +176,7 @@ export class EmbyLibraryDetail extends LitElement {
         ? (item.images.still ?? item.images.poster)
         : item.images.poster;
     const code = isEpisode ? episodeCode(item) : "";
+    const trailer = this._trailerIndex !== null ? item.trailers?.[this._trailerIndex] : undefined;
 
     return html`
       <div class="hero ${backdrop ? "with-backdrop" : ""}">
@@ -208,7 +233,38 @@ export class EmbyLibraryDetail extends LitElement {
       </div>
 
       <div class="body">
-        <div class="actions">${this._renderActions(item)}</div>
+        <div class="actions">
+          ${this._renderActions(item)}
+          ${["Movie", "Episode", "Video", "Series", "Season"].includes(item.type) ? html`
+            <button class="button" ?disabled=${this._playedBusy} @click=${() => void this._setPlayed(item)}>
+              <ha-icon icon=${item.played ? "mdi:eye-off-outline" : "mdi:check-circle-outline"}></ha-icon>
+              ${this._t(this._playedBusy ? "detail.saving" : item.type === "Series" || item.type === "Season"
+                ? item.played ? "detail.mark_all_unplayed" : "detail.mark_all_played"
+                : item.played ? "detail.mark_unplayed" : "detail.mark_played")}
+            </button>` : nothing}
+          ${(item.trailers ?? []).map((_, index) => html`
+            <button class="button" aria-pressed=${this._trailerIndex === index ? "true" : "false"}
+              @click=${() => this._trailerIndex = this._trailerIndex === index ? null : index}>
+              <ha-icon icon="mdi:movie-open-play-outline"></ha-icon>${this._t("detail.trailer")}${(item.trailers?.length ?? 0) > 1 ? ` ${index + 1}` : ""}
+            </button>`)}
+        </div>
+        ${this._playedError ? errorState(this.language, this._playedError, () => void this._setPlayed(item)) : nothing}
+        ${trailer ? html`
+          <iframe class="trailer" src=${trailer.embed_url}
+            title=${this._t("detail.trailer")} referrerpolicy="strict-origin-when-cross-origin"
+            allow="encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
+        ` : nothing}
+        ${(item.media_sources?.length ?? 0) > 0 ? html`
+          <section class="quality" aria-label=${this._t("detail.quality")}>
+            <h3>${this._t("detail.quality")}</h3>
+            ${item.media_sources!.map(source => html`<p>${[
+              source.width && source.height ? `${source.width} × ${source.height}` : source.height ? `${source.height}p` : null,
+              source.video_codec?.toUpperCase(), source.video_range,
+              source.color_transfer === "smpte2084" ? "HDR (PQ)" : source.color_transfer === "arib-std-b67" ? "HDR (HLG)" : null,
+              source.container?.toUpperCase(),
+              source.size_bytes ? `${(source.size_bytes / 1024 ** 3).toFixed(2)} GiB` : null,
+            ].filter(Boolean).join(" · ")}</p>`)}
+          </section>` : nothing}
         ${item.overview
           ? html`
               <p class="overview ${this._expanded ? "expanded" : ""}">${item.overview}</p>
@@ -515,6 +571,8 @@ export class EmbyLibraryDetail extends LitElement {
         flex-wrap: wrap;
         gap: 8px;
       }
+      .trailer { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; margin-top: 16px; border-radius: 8px; }
+      .quality p { color: var(--el-muted); margin: 8px 0; overflow-wrap: anywhere; }
       .overview {
         margin: 16px 0 0;
         line-height: 1.5;

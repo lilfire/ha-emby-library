@@ -44,6 +44,8 @@ export interface Item {
 }
 
 export interface ItemDetail extends Item {
+  trailers?: { name: string; embed_url: string }[];
+  media_sources?: MediaQuality[];
   overview: string | null;
   genres: string[];
   official_rating: string | null;
@@ -97,7 +99,25 @@ export interface KnownClient {
 export type ShelfName = "resume" | "next_up" | "latest" | "suggestions";
 export type SortField = "SortName" | "DateCreated" | "PremiereDate" | "CommunityRating" | "DatePlayed";
 export type SortOrder = "asc" | "desc";
-export type ItemFilter = "unplayed" | "favorites";
+export type ItemFilter = "unplayed" | "played" | "favorites";
+
+export interface MediaQuality {
+  width: number | null;
+  height: number | null;
+  video_codec: string | null;
+  video_range: string | null;
+  color_transfer: string | null;
+  size_bytes: number | null;
+  container: string | null;
+}
+
+export interface LibraryStatistics {
+  movies: number;
+  series: number;
+  episodes: number;
+  unplayed_episodes: number;
+  runtime_s: number;
+}
 export type PlayMode = "resume" | "start";
 
 export type ErrorCode =
@@ -143,8 +163,8 @@ export interface CardConfig {
   poster_size: PosterSize;
   height: "auto" | number;
   default_target: string | null;
-  /** null allows all clients; an explicit list restricts this card. */
-  allowed_targets: string[] | null;
+  /** Derived from the clients explicitly configured for this card. */
+  allowed_targets: string[];
   targets: TargetConfig[];
 }
 

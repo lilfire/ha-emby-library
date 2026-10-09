@@ -47,7 +47,7 @@ import "./views/library";
 import type { EmbyLibrarySearch } from "./views/search";
 import "./views/search";
 
-export const CARD_VERSION = "0.3.1";
+export const CARD_VERSION = "0.4.0";
 
 const WAKE_TIMEOUT_MS = 60_000;
 const PLAY_START_TIMEOUT_MS = 10_000;
@@ -121,6 +121,8 @@ export class EmbyLibraryCard extends LitElement {
   @state() private _available = true;
 
   @state() private _refreshKey = 0;
+
+  private readonly _onLibraryChanged = (): void => { this._refreshKey += 1; };
 
   @state() private _picker: { pending: PlayDetail | null } | null = null;
 
@@ -228,6 +230,7 @@ export class EmbyLibraryCard extends LitElement {
     this.addEventListener("emby-volume", this._onVolume as EventListener);
     this.addEventListener("emby-media", this._onMedia as EventListener);
     this.addEventListener("emby-error", this._onViewError as EventListener);
+    this.addEventListener("emby-library-changed", this._onLibraryChanged);
     if (this._hass) {
       this._hass.connection.addEventListener("ready", this._onReady);
       void this._init();
@@ -242,6 +245,7 @@ export class EmbyLibraryCard extends LitElement {
     this.removeEventListener("emby-volume", this._onVolume as EventListener);
     this.removeEventListener("emby-media", this._onMedia as EventListener);
     this.removeEventListener("emby-error", this._onViewError as EventListener);
+    this.removeEventListener("emby-library-changed", this._onLibraryChanged);
     this._hass?.connection.removeEventListener("ready", this._onReady);
     this._generation += 1;
     this._stopSessions();
@@ -387,17 +391,16 @@ export class EmbyLibraryCard extends LitElement {
   private get _targets(): TargetConfig[] {
     return filterCardClients(
       mergeClientTargets(this._clients, this._config?.targets ?? []),
-      this._config?.allowed_targets ?? null,
+      this._config?.allowed_targets ?? [],
     );
   }
 
   private get _visibleSessions(): Session[] {
-    return filterCardClients(this._sessions, this._config?.allowed_targets ?? null);
+    return filterCardClients(this._sessions, this._config?.allowed_targets ?? []);
   }
 
   private _allowsDevice(deviceId: string): boolean {
-    const allowed = this._config?.allowed_targets ?? null;
-    return allowed === null || allowed.includes(deviceId);
+    return this._config?.allowed_targets.includes(deviceId) ?? false;
   }
 
   private _deviceName(deviceId: string | null): string | null {
@@ -799,6 +802,7 @@ export class EmbyLibraryCard extends LitElement {
           .language=${this._lang}
           .shelves=${config.shelves}
           .limit=${config.shelf_limit}
+          .posterWidth=${POSTER_WIDTHS[config.poster_size]}
           .refreshKey=${this._refreshKey}
         ></emby-library-home>`;
       case "views":

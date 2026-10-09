@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from functools import wraps
+import secrets
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.websocket_api import async_register_command
@@ -50,6 +51,7 @@ from .models import (
     normalize_items,
     normalize_view,
     seconds_to_ticks,
+    ticks_to_seconds,
 )
 
 if TYPE_CHECKING:
@@ -66,6 +68,50 @@ ENTRY_ID = vol.Optional("entry_id")
 
 PLAYABLE_TYPES = ("Movie", "Episode", "Video")
 VALUE_COMMANDS = ("seek", "set_volume")
+
+FILTER_SCHEMA = {
+    vol.Optional("filter"): vol.In(("unplayed", "played", "favorites")),
+    vol.Optional("genre"): vol.All(cv.string, vol.Strip, vol.Length(min=1, max=100)),
+    vol.Optional("year"): vol.All(int, vol.Range(min=1800, max=2200)),
+    vol.Optional("max_runtime_minutes"): vol.All(int, vol.Range(min=1, max=1440)),
+    vol.Optional("max_official_rating"): vol.All(cv.string, vol.Length(min=1, max=50)),
+}
+
+
+def _apply_filters(msg: JsonDict, params: dict[str, str | int]) -> None:
+    """Translate validated filters to Emby parameters."""
+    filters = {"unplayed": "IsUnplayed", "played": "IsPlayed", "favorites": "IsFavorite"}
+    if msg.get("filter") in filters:
+        params["Filters"] = filters[msg["filter"]]
+    for key, parameter in (
+        ("genre", "Genres"),
+        ("year", "Years"),
+        ("max_official_rating", "MaxOfficialRating"),
+    ):
+        if key in msg:
+            params[parameter] = msg[key]
+
+
+async def _all_items(entry: EmbyLibraryConfigEntry, params: dict[str, str | int]) -> list[JsonDict]:
+    """Read all pages, including when totals are missing."""
+    result: list[JsonDict] = []
+    offset = 0
+    while True:
+        data = await entry.runtime_data.client.items({**params, "StartIndex": offset, "Limit": 200})
+        page = data.get("Items", [])
+        if not isinstance(page, list) or not page:
+            break
+        result.extend(item for item in page if isinstance(item, dict))
+        offset += len(page)
+        total = data.get("TotalRecordCount")
+        if isinstance(total, int) and offset >= total:
+            break
+    return result
+
+
+def _runtime_matches(raw: JsonDict, minutes: int) -> bool:
+    runtime = ticks_to_seconds(raw.get("RunTimeTicks"))
+    return runtime is not None and 0 < runtime <= minutes * 60
 
 
 class CommandError(Exception):
@@ -228,7 +274,7 @@ async def ws_shelf(
         vol.Optional("sort_order", default="asc"): vol.In(("asc", "desc")),
         vol.Optional("start_index", default=0): vol.All(int, vol.Range(min=0)),
         vol.Optional("limit", default=60): vol.All(int, vol.Range(min=1, max=200)),
-        vol.Optional("filter"): vol.In(("unplayed", "favorites")),
+        **FILTER_SCHEMA,
     }
 )
 @async_response
@@ -262,10 +308,25 @@ async def ws_items(
         # Mixed libraries and folders are listed one level at a time.
         params["Recursive"] = "false"
 
-    if msg.get("filter") == "unplayed":
-        params["Filters"] = "IsUnplayed"
-    elif msg.get("filter") == "favorites":
-        params["Filters"] = "IsFavorite"
+    _apply_filters(msg, params)
+
+    if "max_runtime_minutes" in msg:
+        matching = [
+            raw
+            for raw in await _all_items(entry, params)
+            if _runtime_matches(raw, msg["max_runtime_minutes"])
+        ]
+        start = msg["start_index"]
+        connection.send_result(
+            msg["id"],
+            {
+                "items": normalize_items(
+                    matching[start : start + msg["limit"]], entry.entry_id, _signer(hass)
+                ),
+                "total": len(matching),
+            },
+        )
+        return
 
     data = await client.items(params)
     raw_items = [i for i in data.get("Items", []) if isinstance(i, dict)]
@@ -277,6 +338,118 @@ async def ws_items(
             "total": total if isinstance(total, int) else len(raw_items),
         },
     )
+
+
+@websocket_command(
+    {
+        vol.Required("type"): "emby_library/random",
+        ENTRY_ID: str,
+        vol.Required("parent_id"): EMBY_ID,
+        **FILTER_SCHEMA,
+    }
+)
+@async_response
+@with_entry
+async def ws_random(
+    hass: HomeAssistant,
+    connection: ActiveConnection,
+    msg: JsonDict,
+    entry: EmbyLibraryConfigEntry,
+) -> None:
+    """Choose from every matching movie, not only the first page."""
+    params: dict[str, str | int] = {
+        "ParentId": msg["parent_id"],
+        "Recursive": "true",
+        "IncludeItemTypes": "Movie",
+        "SortBy": "SortName",
+        "SortOrder": "Ascending",
+    }
+    _apply_filters(msg, params)
+    candidates = await _all_items(entry, params)
+    if "max_runtime_minutes" in msg:
+        candidates = [
+            raw for raw in candidates if _runtime_matches(raw, msg["max_runtime_minutes"])
+        ]
+    item = candidates[secrets.randbelow(len(candidates))] if candidates else None
+    connection.send_result(
+        msg["id"],
+        {
+            "item": normalize_item_detail(item, entry.entry_id, _signer(hass)) if item else None,
+        },
+    )
+
+
+@websocket_command({vol.Required("type"): "emby_library/statistics", ENTRY_ID: str})
+@async_response
+@with_entry
+async def ws_statistics(
+    hass: HomeAssistant,
+    connection: ActiveConnection,
+    msg: JsonDict,
+    entry: EmbyLibraryConfigEntry,
+) -> None:
+    """Aggregate visible video libraries without double counting collections."""
+    hidden = set(entry.options.get(CONF_HIDDEN_VIEWS, []))
+    items: dict[str, JsonDict] = {}
+    for view in await _visible_views(entry):
+        if (
+            str(view.get("Id")) in hidden
+            or normalize_view(view, entry.entry_id, _signer(hass)) is None
+        ):
+            continue
+        for raw in await _all_items(
+            entry,
+            {
+                "ParentId": str(view["Id"]),
+                "Recursive": "true",
+                "IncludeItemTypes": "Movie,Series,Episode",
+                "SortBy": "SortName",
+            },
+        ):
+            items[str(raw["Id"])] = raw
+    stats = {"movies": 0, "series": 0, "episodes": 0, "unplayed_episodes": 0, "runtime_s": 0}
+    for raw in items.values():
+        item_type = raw.get("Type")
+        key = {"Movie": "movies", "Series": "series", "Episode": "episodes"}.get(item_type)
+        if key:
+            stats[key] += 1
+        if item_type == "Episode" and not (raw.get("UserData") or {}).get("Played"):
+            stats["unplayed_episodes"] += 1
+        if item_type in ("Movie", "Episode"):
+            stats["runtime_s"] += max(0, ticks_to_seconds(raw.get("RunTimeTicks")) or 0)
+    connection.send_result(msg["id"], stats)
+
+
+@websocket_command(
+    {
+        vol.Required("type"): "emby_library/set_played",
+        ENTRY_ID: str,
+        vol.Required("item_id"): EMBY_ID,
+        vol.Required("played"): bool,
+    }
+)
+@async_response
+@with_entry
+async def ws_set_played(
+    hass: HomeAssistant,
+    connection: ActiveConnection,
+    msg: JsonDict,
+    entry: EmbyLibraryConfigEntry,
+) -> None:
+    """Mark a movie, episode or all episodes in a season/series."""
+    client = entry.runtime_data.client
+    raw = await client.item(msg["item_id"])
+    if raw.get("Type") == "Series":
+        targets = await client.episodes(msg["item_id"])
+    elif raw.get("Type") == "Season" and raw.get("SeriesId"):
+        targets = await client.episodes(str(raw["SeriesId"]), msg["item_id"])
+    elif raw.get("Type") in PLAYABLE_TYPES:
+        targets = [raw]
+    else:
+        raise CommandError(ERR_UNSUPPORTED_COMMAND, "Cannot change watched status for this item")
+    for target in targets:
+        await client.set_played(str(target["Id"]), msg["played"])
+    connection.send_result(msg["id"], {})
 
 
 @websocket_command(
@@ -536,6 +709,9 @@ def async_register_commands(hass: HomeAssistant) -> None:
         ws_views,
         ws_shelf,
         ws_items,
+        ws_random,
+        ws_statistics,
+        ws_set_played,
         ws_item,
         ws_seasons,
         ws_episodes,

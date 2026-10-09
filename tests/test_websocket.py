@@ -18,6 +18,108 @@ from .conftest import API_KEY, BASE, ENTRY_DATA, SYSTEM_INFO, USER_ID, VIEWS, ca
 U = f"/Users/{USER_ID}"
 
 
+async def test_extended_filters_and_random(
+    hass: HomeAssistant,
+    hass_ws_client: WebSocketGenerator,
+    loaded_entry: MockConfigEntry,
+    emby: aioresponses,
+) -> None:
+    """Runtime filtering and random selection include later pages."""
+    emby.get(url(f"{U}/Views"), payload=VIEWS, repeat=True)
+    first = {"Id": "1", "Type": "Movie", "RunTimeTicks": 120 * 60 * 10_000_000}
+    second = {"Id": "2", "Type": "Movie", "RunTimeTicks": 90 * 60 * 10_000_000}
+    for _ in range(2):
+        emby.get(url(f"{U}/Items"), payload={"Items": [first], "TotalRecordCount": 2})
+        emby.get(url(f"{U}/Items"), payload={"Items": [second], "TotalRecordCount": 2})
+    ws = await hass_ws_client(hass)
+    filters = {
+        "parent_id": "v-movies",
+        "genre": "Drama",
+        "year": 2020,
+        "filter": "played",
+        "max_runtime_minutes": 100,
+        "max_official_rating": "PG-13",
+    }
+    result = await ok(ws, "items", **filters)
+    assert [item["id"] for item in result["items"]] == ["2"]
+    assert result["total"] == 1
+    query = params(emby, f"{U}/Items")
+    assert query["StartIndex"] == 1
+    assert query["Genres"] == "Drama"
+    assert query["Years"] == 2020
+    assert query["Filters"] == "IsPlayed"
+    assert query["MaxOfficialRating"] == "PG-13"
+    assert (await ok(ws, "random", **filters))["item"]["id"] == "2"
+
+
+async def test_random_empty_and_validation(
+    hass: HomeAssistant,
+    hass_ws_client: WebSocketGenerator,
+    loaded_entry: MockConfigEntry,
+    emby: aioresponses,
+) -> None:
+    """No candidate is a valid result; invalid filters are rejected."""
+    emby.get(
+        url(f"{U}/Items"), payload={"Items": [{"Id": "1", "Type": "Movie"}], "TotalRecordCount": 1}
+    )
+    ws = await hass_ws_client(hass)
+    assert await ok(ws, "random", parent_id="v-movies", max_runtime_minutes=100) == {"item": None}
+    assert await err(ws, "random", parent_id="v-movies", max_runtime_minutes=0) == "invalid_format"
+
+
+async def test_watched_status(
+    hass: HomeAssistant,
+    hass_ws_client: WebSocketGenerator,
+    loaded_entry: MockConfigEntry,
+    emby: aioresponses,
+) -> None:
+    """Watched mutations use the configured user and update every season episode."""
+    emby.get(url(f"{U}/Items/1"), payload={"Id": "1", "Type": "Movie"}, repeat=True)
+    emby.post(url(f"{U}/PlayedItems/1"), status=204)
+    emby.delete(url(f"{U}/PlayedItems/1"), status=204)
+    ws = await hass_ws_client(hass)
+    assert await ok(ws, "set_played", item_id="1", played=True) == {}
+    assert await ok(ws, "set_played", item_id="1", played=False) == {}
+    emby.get(url(f"{U}/Items/3"), payload={"Id": "3", "Type": "Season", "SeriesId": "4"})
+    emby.get(url("/Shows/4/Episodes"), payload={"Items": [{"Id": "5"}, {"Id": "6"}]})
+    for item_id in ("5", "6"):
+        emby.post(url(f"{U}/PlayedItems/{item_id}"), status=204)
+    assert await ok(ws, "set_played", item_id="3", played=True) == {}
+    assert params(emby, "/Shows/4/Episodes")["SeasonId"] == "3"
+    emby.get(url(f"{U}/Items/7"), payload={"Id": "7", "Type": "Folder"})
+    assert await err(ws, "set_played", item_id="7", played=True) == "unsupported_command"
+
+
+async def test_library_statistics(
+    hass: HomeAssistant,
+    hass_ws_client: WebSocketGenerator,
+    loaded_entry: MockConfigEntry,
+    emby: aioresponses,
+) -> None:
+    """Statistics count unique items and never add series runtime twice."""
+    emby.get(url(f"{U}/Views"), payload=VIEWS)
+    movie = {"Id": "1", "Type": "Movie", "RunTimeTicks": 60 * 10_000_000}
+    for items in (
+        [movie],
+        [
+            {"Id": "2", "Type": "Series", "RunTimeTicks": 999 * 10_000_000},
+            {"Id": "3", "Type": "Episode", "RunTimeTicks": 30 * 10_000_000},
+            {"Id": "4", "Type": "Episode", "UserData": {"Played": True}},
+        ],
+        [movie],
+        [movie],
+    ):
+        emby.get(url(f"{U}/Items"), payload={"Items": items, "TotalRecordCount": len(items)})
+    ws = await hass_ws_client(hass)
+    assert await ok(ws, "statistics") == {
+        "movies": 1,
+        "series": 1,
+        "episodes": 2,
+        "unplayed_episodes": 1,
+        "runtime_s": 90,
+    }
+
+
 async def call(ws: Any, name: str, /, **kwargs: Any) -> dict[str, Any]:
     """Send a command and return the raw response."""
     await ws.send_json_auto_id({"type": f"emby_library/{name}", **kwargs})

@@ -28,6 +28,8 @@ export class EmbyLibraryHome extends LitElement {
 
   @property({ type: Number }) limit = 20;
 
+  @property({ type: Number }) posterWidth = 150;
+
   /** Changes when the data should be fetched again. */
   @property({ type: Number }) refreshKey = 0;
 
@@ -89,6 +91,7 @@ export class EmbyLibraryHome extends LitElement {
           .items=${row === "loading" ? null : (row as Item[])}
           .shape=${shelf === "resume" ? "still" : "poster"}
           .language=${this.language}
+          .posterWidth=${this.posterWidth}
         ></emby-library-shelf>`;
       })}
     `;

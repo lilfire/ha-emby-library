@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from .const import (
     COLLECTION_TYPES,
@@ -237,12 +237,73 @@ def normalize_item_detail(raw: JsonDict, entry_id: str, signer: ImageSigner) -> 
                 else None
             ),
             "premiere_date": _str_or_none(raw.get("PremiereDate")),
+            "trailers": _trailers(raw),
+            "media_sources": _media_sources(raw),
             "season_count": (
                 _int_or_none(raw.get("ChildCount")) if item["type"] == "Series" else None
             ),
         }
     )
     return item
+
+
+def _trailers(raw: JsonDict) -> list[JsonDict]:
+    """Expose only public YouTube embeds, never arbitrary media URLs."""
+    trailers = []
+    for trailer in raw.get("RemoteTrailers") or []:
+        if not isinstance(trailer, dict):
+            continue
+        parsed = urlparse(str(trailer.get("Url") or ""))
+        if parsed.scheme not in ("http", "https"):
+            continue
+        video_id = None
+        if parsed.hostname in ("youtube.com", "www.youtube.com", "m.youtube.com"):
+            video_id = (parse_qs(parsed.query).get("v") or [None])[0]
+            if parsed.path.startswith(("/embed/", "/shorts/")):
+                video_id = parsed.path.split("/")[2]
+        elif parsed.hostname == "youtu.be":
+            video_id = parsed.path.strip("/")
+        if (
+            video_id
+            and len(video_id) == 11
+            and all(char.isascii() and (char.isalnum() or char in "-_") for char in video_id)
+        ):
+            trailers.append(
+                {
+                    "name": str(trailer.get("Name") or "Trailer"),
+                    "embed_url": f"https://www.youtube-nocookie.com/embed/{video_id}",
+                }
+            )
+    return trailers
+
+
+def _media_sources(raw: JsonDict) -> list[JsonDict]:
+    """Return technical metadata without paths or authenticated stream URLs."""
+    sources = raw.get("MediaSources") or []
+    if not sources and raw.get("MediaStreams"):
+        sources = [raw]
+    result = []
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        videos = [
+            stream
+            for stream in source.get("MediaStreams") or []
+            if isinstance(stream, dict) and stream.get("Type") == "Video"
+        ]
+        video = videos[0] if videos else {}
+        result.append(
+            {
+                "width": _int_or_none(video.get("Width")),
+                "height": _int_or_none(video.get("Height")),
+                "video_codec": _str_or_none(video.get("Codec")),
+                "video_range": _str_or_none(video.get("VideoRange")),
+                "color_transfer": _str_or_none(video.get("ColorTransfer")),
+                "size_bytes": _int_or_none(source.get("Size")),
+                "container": _str_or_none(source.get("Container")),
+            }
+        )
+    return result
 
 
 def view_collection_type(raw: JsonDict) -> str | None:

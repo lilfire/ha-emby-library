@@ -225,7 +225,7 @@ export class EmbyLibrarySearch extends LitElement {
         margin-top: 12px;
         grid-template-columns: repeat(
           auto-fill,
-          minmax(min(var(--el-poster-width, 150px), 45%), 1fr)
+          minmax(min(var(--el-poster-width, 150px), 100%), 1fr)
         );
       }
       section .grid {

@@ -8,7 +8,7 @@ reaches the browser, and it works when Home Assistant is on https and Emby is on
 
 This project is unofficial and not affiliated with Emby.
 
-> **Status: 0.3.1.** The code is covered by automated
+> **Status: 0.4.0.** The code is covered by automated
 > tests, but it has not yet been verified against a real Emby server (see
 > [Compatibility](#compatibility)). Screenshots are added with the first release.
 
@@ -17,6 +17,17 @@ This project is unofficial and not affiliated with Emby.
 - **Home** with the rows Continue watching, Next up, Recently added and Recommended.
 - **Library**: libraries → poster grid → detail page, and series → season → episode.
 - **Search** across movies, series and episodes.
+- **Filters** for genre, year, watched status, maximum runtime and maximum official
+  age rating. Use the rating names stored in Emby, for example `PG-13`.
+- **Choose a movie for me** picks a random movie from the current library or folder,
+  using the active filters and all matching pages.
+- **Library statistics** show unique movies, series, episodes, unwatched episodes and
+  the combined runtime of movies and episodes in visible video libraries.
+- **Trailers** play registered YouTube trailers inside the detail page.
+- **Watched status** can be changed for a movie, episode, or every episode of a
+  season or series, for the integration's selected Emby user.
+- **Media quality** shows resolution, video codec, HDR metadata, container and file
+  size for each available media source when Emby supplies these fields.
 - **Detail page** with poster, backdrop, description, progress, and Play, Resume and
   Play from start.
 - **Client picker**: start playback on any Emby client that can be remote controlled.
@@ -24,18 +35,26 @@ This project is unofficial and not affiliated with Emby.
 - Several Emby servers and several Emby users in the same Home Assistant.
 - Visual card editor. English and Norwegian Bokmål.
 
-Not part of v1: playback in the card itself, casting to non-Emby devices, music,
+Not part of v1: movie or episode playback in the card itself, casting to non-Emby devices, music,
 audiobooks, photos, live TV, `media_player` entities and server administration.
 
-## Changes in 0.3.1
+## Changes in 0.4.0
 
-- Adding clients in the visual editor selects them for the card. Changing or removing
-  clients updates the selection and clears a default player that is no longer selected.
-- **Default player** appears below client settings when at least two clients are selected.
-- **Show all clients** overrides the configured selection. In YAML, use
-  `allowed_targets: null` for this override; omit it to follow the configured `targets`.
-- Wake actions are configured in YAML and preserved when editing other client settings.
-- Disabling Search in the editor resets a Search start view to Home.
+- Filter library items by genre, year, watched status, favorites, maximum runtime
+  and maximum official age rating.
+- Choose a random movie from the current library or folder using the active filters.
+- See library statistics for movies, series, episodes, unwatched episodes and runtime.
+- Play registered YouTube trailers and inspect media quality on the detail page.
+- Mark movies and episodes as watched or unwatched, including all episodes in a
+  season or series.
+- Home rows adapt to the card width and show one row without horizontal scrolling.
+  Poster size controls the preferred item width; `shelf_limit` remains a YAML setting.
+- Only clients explicitly added under **Client settings** appear in the picker and
+  Now playing. Removing the last client leaves the client list empty. Existing
+  `allowed_targets` lists migrate when `targets` is absent; `allowed_targets: null`
+  no longer shows all clients. Add the clients you want to use after upgrading.
+- Select clients from one list in the visual editor, with per-client settings below it.
+  The default player is cleared when its client is removed.
 
 ## Requirements
 
@@ -73,7 +92,6 @@ show_search: true
 poster_size: medium          # small | medium | large
 height: auto                 # auto | number of pixels (at least 200)
 default_target: null         # device_id of the preferred client
-allowed_targets: null        # all clients; or a list of Emby device IDs for this card
 targets:                     # optional, also available in the visual editor
   - name: Living room TV
     device_id: 9ef8d0a2...
@@ -89,17 +107,17 @@ targets:                     # optional, also available in the visual editor
 | `entry` | the only one | Config entry ID of the Emby user. Pick it in the visual editor. |
 | `start_view` | `home` | The view the card opens with. |
 | `shelves` | all four | The rows on Home, in the order given. |
-| `shelf_limit` | `20` | Items per row. |
+| `shelf_limit` | `20` | Items loaded per home section (YAML only). |
 | `show_now_playing` | `true` | Show the Now playing strip when something is playing. |
 | `show_search` | `true` | Show the Search tab. |
-| `poster_size` | `medium` | Poster width 110, 150 or 190 pixels. |
+| `poster_size` | `medium` | Preferred item width: 110, 150 or 190 pixels. Home sections show one row with as many items as fit, filling the available width without wrapping or horizontal scrolling. |
 | `height` | `auto` | A fixed height makes the card scroll internally. |
 | `default_target` | none | `device_id` of the client that is preselected. |
-| `allowed_targets` | configured targets, or all clients if none | Only these Emby device IDs appear in this card; `[]` shows no clients and `null` explicitly shows all clients. Applies to client selection and Now playing. |
+| `allowed_targets` | legacy | Older explicit lists migrate to client settings when `targets` is absent. Use `targets` for new configurations; `null` no longer enables all clients. |
 | `targets` | none | Select clients for the card and configure their names, wake actions and controls, see below. |
 
-The visual editor includes **Client settings**: add a client, choose an online Emby
-client or enter its device ID, then select media players for volume and playback
+The visual editor includes **Client settings**: select clients in the **Clients**
+list or enter their device IDs, then select media players for volume and playback
 control. Wake actions are an advanced YAML-only setting. The visual editor preserves
 existing wake actions when you change a client's name, volume or playback controls.
 
@@ -110,8 +128,8 @@ and Now playing appears when a client is playing.
 
 ### Playback and clients
 
-Each card can show its own selection of clients. In the visual editor, turn off
-**Show all clients**, then choose **Clients available in this card**. For example,
+Each card can show its own selection of clients. In the visual editor, choose
+**Clients** under **Client settings**. For example,
 select only the living room TV in one card, only the bedroom TV in another, and
 both TVs plus the office TV in a third. Selected offline clients remain visible
 and can be woken when they have a `wake_action`. **Default player** appears below
@@ -120,24 +138,29 @@ clients and clears the default when that client leaves the selection. A remember
 browser choice outside the card's selection is ignored. Cards with only one online
 client select it automatically.
 
-Adding clients under **Client settings** also selects them for the card. Removing
-or changing a client updates the selection and clears a removed preferred client.
-Removing the last configured client returns to all discovered clients. **Show all
-clients** explicitly overrides this selection while keeping volume, playback and
-wake settings. In YAML, omit `allowed_targets` to follow `targets`, or set it to
-`null` to show all clients regardless of `targets`.
+Selecting clients creates their settings below the list. Deselecting a client
+removes it from the card and clears it as the preferred client.
+Removing the last configured client leaves the client list empty. Only clients
+added under **Client settings** (or `targets` in YAML) appear in the picker and
+Now playing. Existing `allowed_targets` lists migrate into client settings when
+`targets` is absent.
 
 ```yaml
 type: custom:emby-library-card
-allowed_targets: [living_room_device_id, bedroom_device_id, office_device_id]
+targets:
+  - name: Living room
+    device_id: living_room_device_id
+  - name: Bedroom
+    device_id: bedroom_device_id
 default_target: living_room_device_id
 ```
 
 Emby can only start playback on a client that is open and announces remote control.
-The card lists those clients in the client picker (the cast button at the top right).
+The card lists configured clients in the client picker (the cast button at the top right).
 Clients that have announced remote control and video playback are remembered per
 Emby user in Home Assistant, including across restarts. They remain visible when
-disconnected, in both the card editor and the client picker. Configure a `wake_action`
+disconnected as suggestions in the card editor. Only added clients appear in the
+client picker. Configure a `wake_action`
 to start playback on a disconnected client; without one it is shown as offline and
 cannot be used until it connects. Devices not yet observed by this integration can
 be added manually under **Client settings**. Video support is checked again when
@@ -247,7 +270,7 @@ python scripts/verify_emby.py --url http://192.168.1.10:8096 --api-key KEY \
 Card (browser)  <-- WebSocket, images -->  Home Assistant: emby_library  -- REST -->  Emby Server
 ```
 
-- The card uses eleven WebSocket commands with the prefix `emby_library/`.
+- The card uses fourteen WebSocket commands with the prefix `emby_library/`.
 - Images go through `/api/emby_library/image/...` in Home Assistant. Each address carries
   an HMAC signature for exactly one image and one width, so no login is needed and the
   browser can cache posters.

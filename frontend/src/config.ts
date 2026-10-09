@@ -23,7 +23,7 @@ export const DEFAULT_CONFIG: Omit<CardConfig, "type"> = {
   poster_size: "medium",
   height: "auto",
   default_target: null,
-  allowed_targets: null,
+  allowed_targets: [],
   targets: [],
 };
 
@@ -163,13 +163,15 @@ export function validateConfig(raw: unknown): CardConfig {
     )) {
       throw new Error('"allowed_targets" must be a list of Emby device IDs');
     }
-    config.allowed_targets = [...new Set(raw.allowed_targets as string[])];
-  } else if (raw.allowed_targets === undefined && config.targets.length) {
-    // Client settings also select the clients for this card. Explicit null
-    // is the visual editor's "Show all clients" override.
-    config.allowed_targets = [...new Set(config.targets.map((target) => target.device_id))];
+    // Migrate old explicit selections into client settings.
+    if (raw.targets === undefined) {
+      config.targets = [...new Set(raw.allowed_targets as string[])].map((device_id) => ({
+        name: device_id, device_id,
+      }));
+    }
   }
-  if (config.allowed_targets !== null && config.default_target !== null &&
+  config.allowed_targets = [...new Set(config.targets.map((target) => target.device_id))];
+  if (config.default_target !== null &&
     !config.allowed_targets.includes(config.default_target)) {
     config.default_target = null;
   }
@@ -224,27 +226,11 @@ export function targetFormsToConfig(forms: TargetFormData[]): TargetConfig[] {
 export function updateClientSettings(
   base: Record<string, unknown>, forms: TargetFormData[],
 ): Record<string, unknown> {
-  const previous = validateConfig(base);
   const targets = targetFormsToConfig(forms);
   const config = { ...base };
-  const ids = new Set(targets.map((target) => target.device_id));
-  const removed = new Set(previous.targets
-    .filter((target) => !ids.has(target.device_id)).map((target) => target.device_id));
   if (targets.length) config.targets = targets;
   else delete config.targets;
-  if (Array.isArray(base.allowed_targets)) {
-    const added = targets.filter((target) =>
-      !previous.targets.some((old) => old.device_id === target.device_id));
-    const allowed = [...new Set([
-      ...(previous.allowed_targets ?? []).filter((id) => !removed.has(id)),
-      ...added.map((target) => target.device_id),
-    ])];
-    if (!targets.length && removed.size && !allowed.length) delete config.allowed_targets;
-    else config.allowed_targets = allowed;
-  }
-  if (typeof config.default_target === "string" && removed.has(config.default_target)) {
-    delete config.default_target;
-  }
+  delete config.allowed_targets;
   if (validateConfig(config).default_target === null) delete config.default_target;
   return config;
 }
@@ -260,8 +246,6 @@ export interface FormData {
   show_now_playing: boolean;
   show_search: boolean;
   default_target?: string;
-  all_clients: boolean;
-  allowed_targets: string[];
 }
 
 const MIN_HEIGHT = 200;
@@ -272,6 +256,7 @@ export function formToConfig(
   base: Record<string, unknown>,
 ): Record<string, unknown> {
   const height = Number(data.height) || 0;
+  const targets = validateConfig(base).targets;
   const shelves = data.shelves.filter((shelf) => (SHELVES as readonly string[]).includes(shelf));
   const defaultShelves =
     shelves.length === SHELVES.length && shelves.every((shelf, i) => shelf === SHELVES[i]);
@@ -286,9 +271,8 @@ export function formToConfig(
     show_now_playing: data.show_now_playing ? undefined : false,
     show_search: data.show_search ? undefined : false,
     default_target: data.default_target || undefined,
-    allowed_targets: data.all_clients
-      ? (Array.isArray(base.targets) && base.targets.length ? null : undefined)
-      : data.allowed_targets,
+    allowed_targets: undefined,
+    targets: targets.length ? targets : undefined,
   };
   const config = Object.fromEntries(Object.entries(base).filter(([key]) => !(key in values)));
   for (const [key, value] of Object.entries(values)) {
@@ -310,7 +294,5 @@ export function configToForm(config: CardConfig): FormData {
     show_now_playing: config.show_now_playing,
     show_search: config.show_search,
     default_target: config.default_target ?? undefined,
-    all_clients: config.allowed_targets === null,
-    allowed_targets: [...(config.allowed_targets ?? [])],
   };
 }

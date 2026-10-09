@@ -8,6 +8,7 @@ import type {
   Item,
   ItemDetail,
   ItemFilter,
+  LibraryStatistics,
   PlayMode,
   SessionsEvent,
   ShelfName,
@@ -45,6 +46,10 @@ export function toApiError(err: unknown): EmbyApiError {
 }
 
 export interface ItemsQuery {
+  genre?: string;
+  year?: number;
+  max_runtime_minutes?: number;
+  max_official_rating?: string;
   parent_id: string;
   sort_by?: SortField;
   sort_order?: SortOrder;
@@ -90,6 +95,21 @@ export class EmbyApi {
 
   async item(itemId: string): Promise<ItemDetail> {
     return (await this.send<{ item: ItemDetail }>("item", { item_id: itemId })).item;
+  }
+
+  async random(query: ItemsQuery): Promise<ItemDetail | null> {
+    const { parent_id, filter, genre, year, max_runtime_minutes, max_official_rating } = query;
+    return (await this.send<{ item: ItemDetail | null }>("random", {
+      parent_id, filter, genre, year, max_runtime_minutes, max_official_rating,
+    })).item;
+  }
+
+  async statistics(): Promise<LibraryStatistics> {
+    return this.send<LibraryStatistics>("statistics");
+  }
+
+  async setPlayed(itemId: string, played: boolean): Promise<void> {
+    await this.send("set_played", { item_id: itemId, played });
   }
 
   async seasons(seriesId: string): Promise<Item[]> {

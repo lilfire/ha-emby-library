@@ -21,6 +21,54 @@ SIGNER = ImageSigner(b"0" * 32)
 ENTRY = "entry1"
 
 
+def test_trailers_and_quality() -> None:
+    """Only public embeds and technical fields reach the browser."""
+    detail = normalize_item_detail(
+        {
+            "Id": "1",
+            "Type": "Movie",
+            "RemoteTrailers": [
+                {"Url": "https://www.youtube.com/watch?v=abcdefghijk&token=private"},
+                {"Url": "https://youtu.be/abcdefghijk"},
+                {"Url": "https://youtube.com/embed/abcdefghijk"},
+                {"Url": "https://youtube.com/shorts/abcdefghijk"},
+                {"Url": "https://evil.example/watch?v=abcdefghijk"},
+                {"Url": "javascript:alert(1)"},
+                {"Url": "https://youtube.com/watch?v=invalid"},
+                None,
+            ],
+            "MediaSources": [
+                {
+                    "Path": "/private/movie.mkv",
+                    "Size": 1024**3,
+                    "Container": "mkv",
+                    "MediaStreams": [
+                        {
+                            "Type": "Video",
+                            "Width": 3840,
+                            "Height": 2160,
+                            "Codec": "hevc",
+                            "VideoRange": "HDR",
+                            "ColorTransfer": "smpte2084",
+                        }
+                    ],
+                }
+            ],
+        },
+        ENTRY,
+        SIGNER,
+    )
+    assert len(detail["trailers"]) == 4
+    assert (
+        detail["trailers"][0]["embed_url"] == "https://www.youtube-nocookie.com/embed/abcdefghijk"
+    )
+    assert "private" not in str(detail)
+    assert detail["media_sources"][0]["height"] == 2160
+    assert detail["media_sources"][0]["video_codec"] == "hevc"
+    assert detail["media_sources"][0]["size_bytes"] == 1024**3
+    assert normalize_item_detail({"Id": "2"}, ENTRY, SIGNER)["media_sources"] == []
+
+
 def image(url: str | None) -> tuple[str, str, int]:
     """Return (item_id, image_type, width) from a proxy URL and check its signature."""
     assert url is not None

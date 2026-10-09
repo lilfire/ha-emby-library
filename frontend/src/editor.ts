@@ -147,11 +147,8 @@ export class EmbyLibraryCardEditor extends LitElement {
         targets.set(session.device_id, `${session.device_name} (${session.client})`);
       }
     }
-    for (const id of config.allowed_targets ?? []) {
-      if (!targets.has(id)) targets.set(id, id);
-    }
     const available = [...targets]
-      .filter(([value]) => config.allowed_targets === null || config.allowed_targets.includes(value));
+      .filter(([value]) => config.allowed_targets.includes(value));
     return [
       {
         name: "entry",
@@ -181,7 +178,6 @@ export class EmbyLibraryCardEditor extends LitElement {
           },
         },
       },
-      { name: "shelf_limit", selector: { number: { min: 1, max: 50, step: 1, mode: "box" } } },
       {
         name: "poster_size",
         selector: {
@@ -199,15 +195,7 @@ export class EmbyLibraryCardEditor extends LitElement {
       },
       { name: "show_now_playing", selector: { boolean: {} } },
       { name: "show_search", selector: { boolean: {} } },
-      { name: "all_clients", selector: { boolean: {} } },
-      ...(config.allowed_targets === null ? [] : [{
-        name: "allowed_targets",
-        selector: { select: {
-          multiple: true, custom_value: true,
-          options: [...targets].map(([value, label]) => option(value, label)),
-        } },
-      }]),
-      ...(config.allowed_targets !== null && available.length > 1 ? [{
+      ...(available.length > 1 ? [{
         name: "default_target",
         selector: {
           select: {
@@ -233,7 +221,7 @@ export class EmbyLibraryCardEditor extends LitElement {
     );
   }
 
-  private _targetSchema(): FormSchema[] {
+  private _clientSchema(): FormSchema[] {
     const clients = new Map<string, string>();
     for (const client of this._clients) {
       clients.set(client.device_id, `${client.name} (${client.client})`);
@@ -247,11 +235,28 @@ export class EmbyLibraryCardEditor extends LitElement {
       }
     }
     return [
-      { name: "name", selector: { text: {} } },
-      { name: "device_id", selector: { select: {
-        mode: "dropdown", custom_value: true,
+      { name: "clients", selector: { select: {
+        mode: "dropdown", multiple: true, custom_value: true,
         options: [...clients].map(([value, label]) => ({ value, label })),
       } } },
+    ];
+  }
+
+  private _clientsChanged(event: CustomEvent<{ value: { clients: string[] } }>): void {
+    event.stopPropagation();
+    this._targetForms = [...new Set(event.detail.value.clients)].map((device_id) => {
+      const existing = this._targetForms.find((form) => form.device_id === device_id);
+      if (existing) return existing;
+      const client = this._clients.find((client) => client.device_id === device_id);
+      const session = this._sessions.find((session) => session.device_id === device_id);
+      return { device_id, name: client?.name || session?.device_name || device_id };
+    });
+    this._saveTargets();
+  }
+
+  private _targetSchema(): FormSchema[] {
+    return [
+      { name: "name", selector: { text: {} } },
       { name: "volume_entity", selector: { entity: { filter: { domain: "media_player" } } } },
       { name: "control_entity", selector: { entity: { filter: { domain: "media_player" } } } },
     ];
@@ -276,11 +281,6 @@ export class EmbyLibraryCardEditor extends LitElement {
     this._saveTargets();
   }
 
-  private _removeTarget(index: number): void {
-    this._targetForms = this._targetForms.filter((_, i) => i !== index);
-    this._saveTargets();
-  }
-
   protected override render(): TemplateResult | typeof nothing {
     const config = this._config;
     if (!this._hass || !config || !this._formReady) return nothing;
@@ -296,6 +296,13 @@ export class EmbyLibraryCardEditor extends LitElement {
       ></ha-form>
       <p>${this._t("editor.targets_hint")}</p>
       <h3>${this._t("editor.targets")}</h3>
+      <ha-form
+        .hass=${this._hass}
+        .data=${{ clients: this._targetForms.map((form) => form.device_id) }}
+        .schema=${this._clientSchema()}
+        .computeLabel=${() => this._t("editor.clients")}
+        @value-changed=${this._clientsChanged}
+      ></ha-form>
       ${this._targetForms.map((form, index) => html`
         <section>
           <h4>${form.name || this._t("editor.new_target")}</h4>
@@ -306,13 +313,9 @@ export class EmbyLibraryCardEditor extends LitElement {
             .computeLabel=${(schema: FormSchema) => this._t(`editor.target.${schema.name}` as TranslationKey)}
             @value-changed=${(event: CustomEvent<{ value: TargetFormData }>) => this._targetChanged(index, event)}
           ></ha-form>
-          <button @click=${() => this._removeTarget(index)}>${this._t("editor.remove_target")}</button>
         </section>
       `)}
       ${this._targetError ? html`<p class="error" role="alert">${this._targetError}</p>` : nothing}
-      <button @click=${() => { this._targetForms = [...this._targetForms, {}]; }}>
-        ${this._t("editor.add_target")}
-      </button>
       ${playerSchema.length ? html`
         <ha-form
           .hass=${this._hass}
@@ -333,16 +336,6 @@ export class EmbyLibraryCardEditor extends LitElement {
       margin: 12px 0;
     }
     h4 { margin: 0 0 16px; }
-    button {
-      margin-top: 16px;
-      padding: 8px 16px;
-      border: 1px solid var(--divider-color);
-      border-radius: 20px;
-      background: var(--card-background-color);
-      color: var(--primary-color);
-      font: inherit;
-      cursor: pointer;
-    }
     .error { color: var(--error-color); }
     p {
       margin: 16px 0 0;
