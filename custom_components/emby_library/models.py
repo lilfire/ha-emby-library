@@ -258,7 +258,8 @@ def _trailers(raw: JsonDict) -> list[JsonDict]:
             continue
         video_id = None
         if parsed.hostname in ("youtube.com", "www.youtube.com", "m.youtube.com"):
-            video_id = (parse_qs(parsed.query).get("v") or [None])[0]
+            video_ids = parse_qs(parsed.query).get("v")
+            video_id = video_ids[0] if video_ids else None
             if parsed.path.startswith(("/embed/", "/shorts/")):
                 video_id = parsed.path.split("/")[2]
         elif parsed.hostname == "youtu.be":

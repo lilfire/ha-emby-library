@@ -69,7 +69,7 @@ ENTRY_ID = vol.Optional("entry_id")
 PLAYABLE_TYPES = ("Movie", "Episode", "Video")
 VALUE_COMMANDS = ("seek", "set_volume")
 
-FILTER_SCHEMA = {
+FILTER_SCHEMA: dict[str | vol.Marker, Any] = {
     vol.Optional("filter"): vol.In(("unplayed", "played", "favorites")),
     vol.Optional("genre"): vol.All(cv.string, vol.Strip, vol.Length(min=1, max=100)),
     vol.Optional("year"): vol.All(int, vol.Range(min=1800, max=2200)),
@@ -409,7 +409,7 @@ async def ws_statistics(
             items[str(raw["Id"])] = raw
     stats = {"movies": 0, "series": 0, "episodes": 0, "unplayed_episodes": 0, "runtime_s": 0}
     for raw in items.values():
-        item_type = raw.get("Type")
+        item_type = str(raw.get("Type") or "")
         key = {"Movie": "movies", "Series": "series", "Episode": "episodes"}.get(item_type)
         if key:
             stats[key] += 1
